@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useDarkMode } from "@/context/DarkModeContext";
@@ -44,6 +44,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { language, setLanguage, t, dir, isRTL } = useLanguage();
   const { isDark, toggleDark } = useDarkMode();
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -52,12 +53,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const toggleLang = () => setLanguage(language === "en" ? "ar" : "en");
 
+  useEffect(() => {
+    if (!isAuthenticated && !isPublic) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, isPublic, router]);
+
   if (isPublic) {
     return <>{children}</>;
   }
 
   if (!isAuthenticated && !isPublic) {
-    return <>{children}</>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="w-8 h-8 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (

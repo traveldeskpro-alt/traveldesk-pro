@@ -62,7 +62,7 @@ export default function SignupPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">TravelDesk Pro</h1>
-          <p className="text-blue-200/80 text-sm font-medium">{t("tagline")}</p>
+          <p className="text-blue-200/80 text-sm font-medium">The all-in-one platform for modern travel agencies.</p>
         </div>
 
         <div className="glass rounded-3xl p-8 shadow-2xl">

@@ -1,0 +1,13 @@
+=== 3 FILES CHANGED ===
+
+Replace these 3 files in your GitHub Desktop folder (traveldesk-pro on your Desktop), then commit and push.
+
+FILE 1: src/components/layout/AppShell.tsx
+FILE 2: src/app/login/page.tsx  
+FILE 3: src/app/signup/page.tsx
+
+All 3 files are updated in your workspace. Right-click each file in the file explorer on the left, download it, and paste it into the matching folder on your Desktop.
+
+Then open GitHub Desktop → you will see 3 changed files → commit → push.
+
+Vercel will auto-deploy in 2 minutes.
