@@ -111,6 +111,14 @@ export default function LoginPage() {
       {/* RIGHT SIDE - Login Card */}
       <div className="relative z-10 w-full lg:w-1/2 flex flex-col items-center justify-center px-6 py-8 lg:px-12">
         <div className="w-full max-w-[440px]">
+          {/* Sign Up button at top */}
+          <div className="mb-4 text-center">
+            <p className="text-slate-400 text-sm mb-3">New to TravelDesk Pro?</p>
+            <Link href="/signup" className="inline-block w-full py-3 rounded-xl bg-white/10 border border-white/20 text-white font-semibold text-sm hover:bg-white/20 transition-all">
+              Create Account — Start Free Trial
+            </Link>
+          </div>
+
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[28px] shadow-2xl p-8 lg:p-10">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-white">Welcome back</h2>
@@ -210,6 +218,15 @@ export default function LoginPage() {
             </button>
             <p className="text-center text-xs text-slate-400 mt-2.5">
               See how TravelDesk Pro works with sample data.
+            </p>
+          </div>
+
+          <div className="mt-5 text-center">
+            <p className="text-sm text-slate-400">
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" className="text-[#60A5FA] hover:text-white font-medium transition-colors">
+                Create Account
+              </Link>
             </p>
           </div>
 
