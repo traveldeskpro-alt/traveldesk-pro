@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useBookings, BookingRecord } from '@/hooks/useDataStore';
 import { usePermissions } from '@/hooks/useDataStore';
-import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -49,12 +48,11 @@ const processColors: Record<string, string> = {
 export default function BookingsPage() {
   const { bookings, loading, create, update, remove, search } = useBookings();
   const { can } = usePermissions();
-  const { isDemo, canCreateBooking, incrementDemoBooking, demoBookingCount } = useAuth();
   const { t } = useLanguage();
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [showDemoLimit, setShowDemoLimit] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [editing, setEditing] = useState<BookingRecord | null>(null);
 
   const [form, setForm] = useState<{
@@ -82,13 +80,9 @@ export default function BookingsPage() {
   };
 
   const openCreate = () => {
-    if (isDemo && !canCreateBooking()) {
-      setShowDemoLimit(true);
-      return;
-    }
     resetForm();
+    setSaveError(null);
     setShowModal(true);
-    if (isDemo) incrementDemoBooking();
   };
 
   const openEdit = (b: BookingRecord) => {
@@ -103,8 +97,9 @@ export default function BookingsPage() {
     setShowModal(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.customer_name || !form.sale_price) return;
+    setSaveError(null);
     const data = {
       customer_id: generateId(),
       customer_name: form.customer_name,
@@ -120,13 +115,18 @@ export default function BookingsPage() {
       agent_name: form.agent_name,
       notes: '',
     };
-    if (editing) {
-      update(editing.id, { ...data, customer_id: editing.customer_id });
-    } else {
-      create(data);
+    try {
+      if (editing) {
+        await update(editing.id, { ...data, customer_id: editing.customer_id });
+      } else {
+        await create(data);
+      }
+      setShowModal(false);
+      resetForm();
+    } catch (err: any) {
+      // Surfaces demo booking-limit errors and any Supabase write errors.
+      setSaveError(err?.message ?? 'Failed to save booking. Please try again.');
     }
-    setShowModal(false);
-    resetForm();
   };
 
   const handleDelete = (id: string) => {
@@ -182,17 +182,6 @@ export default function BookingsPage() {
           <div><p className="text-2xl font-bold text-[#0F172A]">{pendingCount}</p><p className="text-xs text-slate-500">Pending Payments</p></div>
         </Card>
       </div>
-
-      {/* Demo Limit */}
-      {isDemo && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-xs">{demoBookingCount}</div>
-            <div><p className="text-sm font-medium text-amber-900">Demo Mode</p><p className="text-xs text-amber-700">{demoBookingCount}/2 bookings used</p></div>
-          </div>
-          {showDemoLimit && <p className="text-sm font-bold text-red-600">{t('demoLimit')}</p>}
-        </div>
-      )}
 
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -341,6 +330,11 @@ export default function BookingsPage() {
                 <div><label className="block text-sm font-medium text-slate-700 mb-1">Date</label><input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" /></div>
               </div>
             </div>
+            {saveError && (
+              <div className="mt-4 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {saveError}
+              </div>
+            )}
             <div className="sticky bottom-0 bg-white pt-4 mt-4 border-t border-slate-100 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
               <Button variant="primary" onClick={handleSave} className="gap-2"><Save className="w-4 h-4" /> Save Booking</Button>

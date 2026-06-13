@@ -1,22 +1,72 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get("tdp_auth_token")?.value;
+// Routes that do not require a session.
+// /demo is the isolated demo workspace — it has its own DemoProvider and
+// never interacts with the real Supabase auth session.
+const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/demo'];
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isPublicPath = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
-  const publicPaths = ["/login", "/signup", "/forgot-password", "/reset-password"];
-  const isPublic = publicPaths.some((p) => pathname.startsWith(p));
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // For prototype, we rely on client-side auth check in AppShell
-  // This middleware can be extended to check Firebase auth tokens
-  if (pathname === "/") {
+  // When Supabase is not configured (e.g. local demo dev without a .env),
+  // skip the server-side check and let the client handle auth state.
+  if (!supabaseUrl || !supabaseKey) {
     return NextResponse.next();
   }
 
-  return NextResponse.next();
+  // Build a response object that we can mutate to forward refreshed cookies.
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        // Forward any new/refreshed cookies to both the request and the
+        // outgoing response so the browser and middleware stay in sync.
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        );
+        response = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
+
+  // getUser() validates the JWT with Supabase's auth servers — it does NOT
+  // just decode the cookie locally. This detects expired/revoked sessions.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Unauthenticated request to a protected route → send to login.
+  if (!user && !isPublicPath) {
+    const loginUrl = new URL('/login', request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Authenticated request to a public auth page (login/signup) → skip to app.
+  // /reset-password is excluded: Supabase posts an auth code there even when
+  // the user already has an active session (e.g. changing password while logged in).
+  if (user && isPublicPath && !pathname.startsWith('/reset-password')) {
+    const dashboardUrl = new URL('/dashboard', request.url);
+    return NextResponse.redirect(dashboardUrl);
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|logo.png|icon.png).*)"],
+  matcher: [
+    // Run on every route except Next.js internals, static files, and images.
+    '/((?!api|_next/static|_next/image|favicon.ico|logo.png|icon.png|images).*)',
+  ],
 };

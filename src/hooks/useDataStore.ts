@@ -3,11 +3,17 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { useDataMode, DEMO_BOOKING_LIMIT } from '@/context/DataModeContext';
 
 // ============================================================
 // DATA STORE — Hybrid: Supabase (cloud) + localStorage (fallback)
 // When NEXT_PUBLIC_SUPABASE_URL is set → uses real database
-// When not set → uses browser localStorage (demo mode)
+// When not set → uses browser localStorage (demo/dev mode)
+//
+// useDataMode() adds a third switch: when DataModeProvider wraps a route
+// tree (i.e. /demo/*), all hooks use localStorage regardless of whether
+// Supabase is configured. This is how demo isolation works without any
+// demo-specific code in the page components.
 // ============================================================
 
 function getStorageKey(agencyId: string, table: string) {
@@ -217,13 +223,14 @@ export interface CustomerRecord {
 
 export function useCustomers() {
   const { user } = useAuth();
+  const { useLocalStorage } = useDataMode();
   const agencyId = user?.agencyId || 'demo';
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       supabase
         .from('customers')
         .select('*')
@@ -238,7 +245,7 @@ export function useCustomers() {
       setLoading(false);
     }
     return () => { cancelled = true; };
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const create = useCallback(async (data: Omit<CustomerRecord, 'id' | 'agency_id' | 'created_at' | 'total_bookings' | 'total_spend'>) => {
     const newRecord: CustomerRecord = {
@@ -249,7 +256,7 @@ export function useCustomers() {
       total_spend: 0,
       created_at: new Date().toISOString(),
     };
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       const { data: inserted, error } = await supabase.from('customers').insert(newRecord).select().single();
       if (!error && inserted) {
         setCustomers((prev) => [inserted as CustomerRecord, ...prev]);
@@ -262,10 +269,10 @@ export function useCustomers() {
       return updated;
     });
     return newRecord;
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const update = useCallback(async (id: string, data: Partial<Omit<CustomerRecord, 'id' | 'agency_id'>>) => {
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       await supabase.from('customers').update(data).eq('id', id);
       setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } : c)));
     } else {
@@ -275,10 +282,10 @@ export function useCustomers() {
         return updated;
       });
     }
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const remove = useCallback(async (id: string) => {
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       await supabase.from('customers').delete().eq('id', id);
       setCustomers((prev) => prev.filter((c) => c.id !== id));
     } else {
@@ -288,7 +295,7 @@ export function useCustomers() {
         return updated;
       });
     }
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const search = useCallback((query: string) => {
     const q = query.toLowerCase();
@@ -335,13 +342,14 @@ export interface BookingRecord {
 
 export function useBookings() {
   const { user } = useAuth();
+  const { useLocalStorage } = useDataMode();
   const agencyId = user?.agencyId || 'demo';
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       supabase
         .from('bookings')
         .select('*')
@@ -356,9 +364,22 @@ export function useBookings() {
       setLoading(false);
     }
     return () => { cancelled = true; };
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const create = useCallback(async (data: Omit<BookingRecord, 'id' | 'agency_id' | 'created_at' | 'updated_at'>) => {
+    // Enforce the demo booking limit when running in localStorage mode.
+    // Reading from storage (not React state) ensures the check is always
+    // up-to-date regardless of which hook instance is calling.
+    if (useLocalStorage) {
+      const existing = loadTable<BookingRecord>(agencyId, 'bookings');
+      if (existing.length >= DEMO_BOOKING_LIMIT) {
+        throw new Error(
+          `Demo limit reached (${DEMO_BOOKING_LIMIT} bookings). ` +
+          `Create a free account for unlimited bookings.`
+        );
+      }
+    }
+
     const now = new Date().toISOString();
     const newRecord: BookingRecord = {
       id: crypto?.randomUUID ? crypto.randomUUID() : generateId(),
@@ -367,7 +388,7 @@ export function useBookings() {
       created_at: now,
       updated_at: now,
     };
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       const { data: inserted, error } = await supabase.from('bookings').insert(newRecord).select().single();
       if (!error && inserted) {
         setBookings((prev) => [inserted as BookingRecord, ...prev]);
@@ -379,12 +400,16 @@ export function useBookings() {
       saveTable(agencyId, 'bookings', updated);
       return updated;
     });
+    // Notify the DemoShell sidebar counter so it refreshes in real time.
+    if (useLocalStorage && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('tdp-demo-data-change'));
+    }
     return newRecord;
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const update = useCallback(async (id: string, data: Partial<Omit<BookingRecord, 'id' | 'agency_id'>>) => {
     const updateData = { ...data, updated_at: new Date().toISOString() };
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       await supabase.from('bookings').update(updateData).eq('id', id);
       setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, ...updateData } : b)));
     } else {
@@ -394,10 +419,10 @@ export function useBookings() {
         return updated;
       });
     }
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const remove = useCallback(async (id: string) => {
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       await supabase.from('bookings').delete().eq('id', id);
       setBookings((prev) => prev.filter((b) => b.id !== id));
     } else {
@@ -406,8 +431,12 @@ export function useBookings() {
         saveTable(agencyId, 'bookings', updated);
         return updated;
       });
+      // Notify DemoShell counter on deletion too.
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('tdp-demo-data-change'));
+      }
     }
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const search = useCallback((query: string, filter?: string) => {
     const q = query.toLowerCase();
@@ -476,13 +505,14 @@ export interface InvoiceRecord {
 
 export function useInvoices() {
   const { user } = useAuth();
+  const { useLocalStorage } = useDataMode();
   const agencyId = user?.agencyId || 'demo';
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       supabase
         .from('invoices')
         .select('*')
@@ -500,7 +530,7 @@ export function useInvoices() {
       setLoading(false);
     }
     return () => { cancelled = true; };
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const create = useCallback(async (data: Omit<InvoiceRecord, 'id' | 'agency_id' | 'created_at'>) => {
     const newRecord: InvoiceRecord = {
@@ -509,7 +539,7 @@ export function useInvoices() {
       ...data,
       created_at: new Date().toISOString(),
     };
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       const { data: inserted, error } = await supabase.from('invoices').insert(newRecord).select().single();
       if (!error && inserted) {
         const parsed = { ...inserted, items: Array.isArray(inserted.items) ? inserted.items : JSON.parse(inserted.items || '[]') };
@@ -523,10 +553,10 @@ export function useInvoices() {
       return updated;
     });
     return newRecord;
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const update = useCallback(async (id: string, data: Partial<Omit<InvoiceRecord, 'id' | 'agency_id'>>) => {
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       await supabase.from('invoices').update(data).eq('id', id);
       setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...data } : i)));
     } else {
@@ -536,11 +566,11 @@ export function useInvoices() {
         return updated;
       });
     }
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const updateStatus = useCallback(async (id: string, status: InvoiceRecord['status']) => {
     const updateData = { status, paid_at: status === 'paid' ? new Date().toISOString() : undefined };
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       await supabase.from('invoices').update(updateData).eq('id', id);
       setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...updateData } : i)));
     } else {
@@ -550,10 +580,10 @@ export function useInvoices() {
         return updated;
       });
     }
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const remove = useCallback(async (id: string) => {
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       await supabase.from('invoices').delete().eq('id', id);
       setInvoices((prev) => prev.filter((i) => i.id !== id));
     } else {
@@ -563,7 +593,7 @@ export function useInvoices() {
         return updated;
       });
     }
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   return { invoices, loading, create, update, updateStatus, remove };
 }
@@ -585,13 +615,14 @@ export interface AgentRecord {
 
 export function useAgents() {
   const { user } = useAuth();
+  const { useLocalStorage } = useDataMode();
   const agencyId = user?.agencyId || 'demo';
   const [agents, setAgents] = useState<AgentRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       supabase
         .from('agents')
         .select('*')
@@ -606,7 +637,7 @@ export function useAgents() {
       setLoading(false);
     }
     return () => { cancelled = true; };
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const create = useCallback(async (data: Omit<AgentRecord, 'id' | 'agency_id' | 'created_at' | 'total_sales' | 'commission_earned' | 'commission_paid'>) => {
     const newRecord: AgentRecord = {
@@ -618,7 +649,7 @@ export function useAgents() {
       commission_paid: 0,
       created_at: new Date().toISOString(),
     };
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       const { data: inserted, error } = await supabase.from('agents').insert(newRecord).select().single();
       if (!error && inserted) {
         setAgents((prev) => [inserted as AgentRecord, ...prev]);
@@ -631,10 +662,10 @@ export function useAgents() {
       return updated;
     });
     return newRecord;
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const update = useCallback(async (id: string, data: Partial<Omit<AgentRecord, 'id' | 'agency_id'>>) => {
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       await supabase.from('agents').update(data).eq('id', id);
       setAgents((prev) => prev.map((a) => (a.id === id ? { ...a, ...data } : a)));
     } else {
@@ -644,10 +675,10 @@ export function useAgents() {
         return updated;
       });
     }
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const remove = useCallback(async (id: string) => {
-    if (isSupabaseEnabled && supabase) {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
       await supabase.from('agents').delete().eq('id', id);
       setAgents((prev) => prev.filter((a) => a.id !== id));
     } else {
@@ -657,7 +688,7 @@ export function useAgents() {
         return updated;
       });
     }
-  }, [agencyId]);
+  }, [agencyId, useLocalStorage]);
 
   const recalculateCommissions = useCallback((bookings: BookingRecord[]) => {
     setAgents((prevAgents) => {
