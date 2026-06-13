@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { supabase } from "@/lib/supabase";
 
 interface User {
@@ -76,13 +83,15 @@ const AuthContext = createContext<AuthContextType>({
 
 function setAuthCookie() {
   if (typeof document !== "undefined") {
-    document.cookie = "tdp_auth_session=1; path=/; max-age=86400; SameSite=Lax";
+    document.cookie =
+      "tdp_auth_session=1; path=/; max-age=86400; SameSite=Lax";
   }
 }
 
 function clearAuthCookie() {
   if (typeof document !== "undefined") {
-    document.cookie = "tdp_auth_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    document.cookie =
+      "tdp_auth_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
   }
 }
 
@@ -101,6 +110,38 @@ const mockAgency: Agency = {
   updatedAt: "2024-06-10",
 };
 
+// Reusable helper — maps a Supabase users+agencies row into typed state.
+function mapProfile(
+  profile: any
+): { user: User; agency: Agency } | null {
+  if (!profile?.agencies) return null;
+  const a = profile.agencies as any;
+  return {
+    user: {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      role: profile.role,
+      agencyId: profile.agency_id,
+    },
+    agency: {
+      id: a.id,
+      name: a.name,
+      email: a.email,
+      phone: a.phone,
+      crNumber: a.cr_number || "",
+      address: a.address || "",
+      logoUrl: a.logo_url || "",
+      currency: a.currency || "OMR",
+      language: a.language || "en",
+      status: a.status || "active",
+      plan: a.plan || "starter",
+      createdAt: a.created_at,
+      updatedAt: a.updated_at,
+    },
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [agency, setAgency] = useState<Agency | null>(null);
@@ -108,182 +149,162 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isDemo, setIsDemo] = useState(false);
   const [demoBookingCount, setDemoBookingCount] = useState(0);
 
+  // Ref used inside onAuthStateChange closure to detect active demo sessions
+  // without capturing stale state (avoids stale closure bugs).
+  const isDemoRef = useRef(false);
+
+  useEffect(() => {
+    isDemoRef.current = isDemo;
+  }, [isDemo]);
+
   useEffect(() => {
     let mounted = true;
 
-    async function loadSession() {
-      const sb = supabase;
-      if (sb) {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session?.user && mounted) {
-          const res = await sb
-            .from('users')
-            .select('*, agencies(*)')
-            .eq('id', session.user.id)
-            .single();
-          const profile = res.data as any;
-          if (profile && mounted) {
-            setUser({
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              role: profile.role,
-              agencyId: profile.agency_id,
-            });
-            const a = profile.agencies as any;
-            setAgency({
-              id: a.id,
-              name: a.name,
-              email: a.email,
-              phone: a.phone,
-              crNumber: a.cr_number || '',
-              address: a.address || '',
-              logoUrl: a.logo_url || '',
-              currency: a.currency || 'OMR',
-              language: a.language || 'en',
-              status: a.status || 'active',
-              plan: a.plan || 'starter',
-              createdAt: a.created_at,
-              updatedAt: a.updated_at,
-            });
-          }
-        }
-      } else {
-        const stored = typeof window !== "undefined" ? localStorage.getItem("tdp_user") : null;
+    // ── Supabase not configured ────────────────────────────────────────────
+    // No real auth available. Load persisted demo session from localStorage if
+    // present so the "Explore Demo" experience survives a page refresh.
+    if (!supabase) {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("tdp_user");
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
-            if (mounted) {
+            if (parsed.isDemo && mounted) {
               setUser(parsed.user);
               setAgency(parsed.agency || mockAgency);
-              setIsDemo(parsed.isDemo || false);
+              setIsDemo(true);
+              isDemoRef.current = true;
               setDemoBookingCount(parsed.demoBookingCount || 0);
             }
           } catch {
-            // ignore
+            // Corrupted storage — ignore.
           }
         }
       }
       if (mounted) setIsLoading(false);
-    }
-
-    loadSession();
-
-    if (supabase) {
-      const sb = supabase;
-      const { data: listener } = sb.auth.onAuthStateChange(async (event, session) => {
-        if (!mounted) return;
-        if (event === 'SIGNED_OUT' || !session) {
-          setUser(null);
-          setAgency(null);
-          setIsDemo(false);
-          clearAuthCookie();
-          return;
-        }
-        if (session?.user) {
-          const res = await sb
-            .from('users')
-            .select('*, agencies(*)')
-            .eq('id', session.user.id)
-            .single();
-          const profile = res.data as any;
-          if (profile && mounted) {
-            setUser({
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              role: profile.role,
-              agencyId: profile.agency_id,
-            });
-            const a = profile.agencies as any;
-            setAgency({
-              id: a.id,
-              name: a.name,
-              email: a.email,
-              phone: a.phone,
-              crNumber: a.cr_number || '',
-              address: a.address || '',
-              logoUrl: a.logo_url || '',
-              currency: a.currency || 'OMR',
-              language: a.language || 'en',
-              status: a.status || 'active',
-              plan: a.plan || 'starter',
-              createdAt: a.created_at,
-              updatedAt: a.updated_at,
-            });
-          }
-        }
-      });
       return () => {
         mounted = false;
-        listener?.subscription.unsubscribe();
       };
     }
 
-    return () => { mounted = false; };
-  }, []);
+    // ── Supabase is available ───────────────────────────────────────────────
+    // Use onAuthStateChange as the SINGLE source of truth for auth state.
+    //
+    // In Supabase v2 the listener fires INITIAL_SESSION on mount with the
+    // currently stored session (or null). This replaces getSession() and
+    // eliminates the race condition that existed when both ran concurrently.
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
 
-  const login = useCallback(async (email: string, password: string) => {
-    const sb = supabase;
-    if (sb) {
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      if (data.user) {
-        const res = await sb
-          .from('users')
-          .select('*, agencies(*)')
-          .eq('id', data.user.id)
-          .single();
-        const profile = res.data as any;
-        if (profile) {
-          setUser({
-            id: profile.id,
-            name: profile.name,
-            email: profile.email,
-            role: profile.role,
-            agencyId: profile.agency_id,
-          });
-          const a = profile.agencies as any;
-          setAgency({
-            id: a.id,
-            name: a.name,
-            email: a.email,
-            phone: a.phone,
-            crNumber: a.cr_number || '',
-            address: a.address || '',
-            logoUrl: a.logo_url || '',
-            currency: a.currency || 'OMR',
-            language: a.language || 'en',
-            status: a.status || 'active',
-            plan: a.plan || 'starter',
-            createdAt: a.created_at,
-            updatedAt: a.updated_at,
-          });
+        // ── Signed out ─────────────────────────────────────────────────────
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+          setAgency(null);
           setIsDemo(false);
+          isDemoRef.current = false;
+          setDemoBookingCount(0);
+          clearAuthCookie();
+          if (mounted) setIsLoading(false);
+          return;
         }
+
+        // ── Token refreshed — session updated but profile unchanged ────────
+        if (event === "TOKEN_REFRESHED") {
+          if (mounted) setIsLoading(false);
+          return;
+        }
+
+        // ── No session (initial load without auth) ─────────────────────────
+        if (!session) {
+          // Check whether the user entered demo mode before this event fired.
+          // If so, leave the demo state intact.
+          if (!isDemoRef.current && typeof window !== "undefined") {
+            const stored = localStorage.getItem("tdp_user");
+            if (stored) {
+              try {
+                const parsed = JSON.parse(stored);
+                if (parsed.isDemo && mounted) {
+                  setUser(parsed.user);
+                  setAgency(parsed.agency || mockAgency);
+                  setIsDemo(true);
+                  isDemoRef.current = true;
+                  setDemoBookingCount(parsed.demoBookingCount || 0);
+                  if (mounted) setIsLoading(false);
+                  return;
+                }
+              } catch {
+                // Corrupted storage — ignore.
+              }
+            }
+          }
+          if (mounted) setIsLoading(false);
+          return;
+        }
+
+        // ── Valid session (INITIAL_SESSION, SIGNED_IN, USER_UPDATED) ──────
+        // supabase is guaranteed non-null here: the outer useEffect returns
+        // early when supabase is null and onAuthStateChange is never called.
+        const sb = supabase!;
+        const res = await sb
+          .from("users")
+          .select("*, agencies(*)")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!res.data || res.error) {
+          // Auth user exists but has no matching profile row.
+          // Sign out cleanly rather than leaving a half-authenticated state.
+          await sb.auth.signOut();
+          if (mounted) setIsLoading(false);
+          return;
+        }
+
+        const mapped = mapProfile(res.data);
+        if (mapped && mounted) {
+          setUser(mapped.user);
+          setAgency(mapped.agency);
+          setIsDemo(false);
+          isDemoRef.current = false;
+          setAuthCookie();
+        }
+        if (mounted) setIsLoading(false);
       }
-      return;
-    }
+    );
 
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const newUser: User = {
-      id: "usr-001",
-      name: "John Doe",
-      email,
-      role: "owner",
-      agencyId: "agency-001",
+    return () => {
+      mounted = false;
+      listener?.subscription.unsubscribe();
     };
-    setUser(newUser);
-    setAgency(mockAgency);
-    setIsDemo(false);
-    setDemoBookingCount(0);
-    setAuthCookie();
-    if (typeof window !== "undefined") {
-      localStorage.setItem("tdp_user", JSON.stringify({ user: newUser, agency: mockAgency, isDemo: false, demoBookingCount: 0 }));
-    }
   }, []);
 
+  // ── login ──────────────────────────────────────────────────────────────────
+  // Throws when Supabase is not configured instead of silently accepting any
+  // credentials. isLoading is set to true here and cleared by onAuthStateChange
+  // so AppShell shows a spinner between login() resolving and SIGNED_IN firing.
+  const login = useCallback(async (email: string, password: string) => {
+    if (!supabase) {
+      throw new Error(
+        "Authentication is not configured. Please contact support."
+      );
+    }
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      setIsLoading(false);
+      throw error;
+    }
+    // Profile loading and isLoading = false are handled by onAuthStateChange.
+  }, []);
+
+  // ── startDemo ──────────────────────────────────────────────────────────────
+  // Purely client-side demo mode. Not real authentication — no Supabase session
+  // is created. State is persisted to localStorage so the demo survives a
+  // refresh, but on reload it is loaded by the onAuthStateChange null-session
+  // branch above (not by Supabase).
   const startDemo = useCallback(async () => {
     await new Promise((resolve) => setTimeout(resolve, 800));
     const demoUser: User = {
@@ -293,29 +314,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role: "owner",
       agencyId: "demo-agency",
     };
-    const demoAgency: Agency = { ...mockAgency, id: "demo-agency", name: "Demo Travel Agency", email: "demo@traveldeskpro.app" };
+    const demoAgency: Agency = {
+      ...mockAgency,
+      id: "demo-agency",
+      name: "Demo Travel Agency",
+      email: "demo@traveldeskpro.app",
+    };
     setUser(demoUser);
     setAgency(demoAgency);
     setIsDemo(true);
+    isDemoRef.current = true;
     setDemoBookingCount(0);
     setAuthCookie();
     if (typeof window !== "undefined") {
-      localStorage.setItem("tdp_user", JSON.stringify({ user: demoUser, agency: demoAgency, isDemo: true, demoBookingCount: 0 }));
+      localStorage.setItem(
+        "tdp_user",
+        JSON.stringify({
+          user: demoUser,
+          agency: demoAgency,
+          isDemo: true,
+          demoBookingCount: 0,
+        })
+      );
     }
   }, []);
 
+  // ── register ───────────────────────────────────────────────────────────────
+  // Throws when Supabase is not configured. The localStorage fallback that
+  // previously created a fake local account is removed.
   const register = useCallback(async (form: SignupForm) => {
+    if (!supabase) {
+      throw new Error(
+        "Authentication is not configured. Please contact support."
+      );
+    }
     const sb = supabase;
-    if (sb) {
-      const { data: authData, error: authError } = await sb.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: { data: { name: form.agencyName } },
-      });
-      if (authError) throw authError;
-      const uid = authData.user!.id;
 
-      const { data: agencyData, error: agencyError } = await sb.from('agencies').insert({
+    const { data: authData, error: authError } = await sb.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: { data: { name: form.agencyName } },
+    });
+    if (authError) throw authError;
+    const uid = authData.user!.id;
+
+    const { data: agencyData, error: agencyError } = await sb
+      .from("agencies")
+      .insert({
         name: form.agencyName,
         email: form.email,
         phone: form.phone,
@@ -323,112 +368,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         address: form.address,
         currency: form.currency,
         language: form.language,
-        status: 'trial',
+        status: "trial",
         plan: form.plan,
-      }).select().single();
-      if (agencyError) throw agencyError;
+      })
+      .select()
+      .single();
+    if (agencyError) throw agencyError;
 
-      await sb.from('users').insert({
-        id: uid,
-        agency_id: agencyData.id,
-        email: form.email,
-        name: form.agencyName,
-        role: 'owner',
-        active: true,
-      });
-
-      const { data: signInData, error: signInError } = await sb.auth.signInWithPassword({
-        email: form.email,
-        password: form.password,
-      });
-      if (!signInError && signInData.user) {
-        const a = agencyData as any;
-        setUser({ id: uid, name: form.agencyName, email: form.email, role: 'owner', agencyId: agencyData.id });
-        setAgency({
-          id: a.id,
-          name: a.name,
-          email: a.email,
-          phone: a.phone,
-          crNumber: a.cr_number || '',
-          address: a.address || '',
-          logoUrl: a.logo_url || '',
-          currency: a.currency || 'OMR',
-          language: a.language || 'en',
-          status: a.status || 'trial',
-          plan: a.plan || 'starter',
-          createdAt: a.created_at,
-          updatedAt: a.updated_at,
-        });
-      }
-      return;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    const newUser: User = {
-      id: "usr-" + Math.random().toString(36).substring(2, 8),
-      name: form.agencyName,
+    const { error: userError } = await sb.from("users").insert({
+      id: uid,
+      agency_id: agencyData.id,
       email: form.email,
+      name: form.agencyName,
       role: "owner",
-      agencyId: "agency-" + Math.random().toString(36).substring(2, 8),
-    };
-    const newAgency: Agency = {
-      ...mockAgency,
-      id: newUser.agencyId,
-      name: form.agencyName,
+      active: true,
+    });
+    if (userError) throw userError;
+
+    // Sign in triggers onAuthStateChange → SIGNED_IN → profile load.
+    setIsLoading(true);
+    const { error: signInError } = await sb.auth.signInWithPassword({
       email: form.email,
-      phone: form.phone,
-      address: form.address,
-      crNumber: form.crNumber,
-      currency: form.currency,
-      language: form.language,
-      plan: form.plan,
-      status: 'trial',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setUser(newUser);
-    setAgency(newAgency);
-    setIsDemo(false);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("tdp_user", JSON.stringify({ user: newUser, agency: newAgency, isDemo: false, demoBookingCount: 0 }));
+      password: form.password,
+    });
+    if (signInError) {
+      setIsLoading(false);
+      throw signInError;
     }
+    // State update handled by onAuthStateChange.
   }, []);
 
+  // ── requestPasswordReset ──────────────────────────────────────────────────
   const requestPasswordReset = useCallback(async (email: string) => {
-    const sb = supabase;
-    if (sb) {
-      const redirectTo = typeof window !== "undefined"
+    if (!supabase) {
+      throw new Error("Authentication is not configured.");
+    }
+    const redirectTo =
+      typeof window !== "undefined"
         ? `${window.location.origin}/reset-password`
         : undefined;
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
-      if (error) throw error;
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+    if (error) throw error;
   }, []);
 
+  // ── updatePassword ────────────────────────────────────────────────────────
   const updatePassword = useCallback(async (newPassword: string) => {
-    const sb = supabase;
-    if (sb) {
-      const { error } = await sb.auth.updateUser({ password: newPassword });
-      if (error) throw error;
-      return;
+    if (!supabase) {
+      throw new Error("Authentication is not configured.");
     }
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    if (error) throw error;
   }, []);
 
+  // ── logout ────────────────────────────────────────────────────────────────
   const logout = useCallback(() => {
-    const sb = supabase;
-    if (sb) {
-      sb.auth.signOut();
-    }
-    setUser(null);
-    setAgency(null);
-    setIsDemo(false);
-    setDemoBookingCount(0);
-    clearAuthCookie();
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("tdp_user");
+    if (supabase) {
+      supabase.auth.signOut();
+      // onAuthStateChange handles SIGNED_OUT → clears state.
+    } else {
+      // No Supabase (demo-only mode) — clear manually.
+      setUser(null);
+      setAgency(null);
+      setIsDemo(false);
+      isDemoRef.current = false;
+      setDemoBookingCount(0);
+      clearAuthCookie();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("tdp_user");
+      }
     }
   }, []);
 
@@ -444,9 +455,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (typeof window !== "undefined") {
           const stored = localStorage.getItem("tdp_user");
           if (stored) {
-            const parsed = JSON.parse(stored);
-            parsed.demoBookingCount = next;
-            localStorage.setItem("tdp_user", JSON.stringify(parsed));
+            try {
+              const parsed = JSON.parse(stored);
+              parsed.demoBookingCount = next;
+              localStorage.setItem("tdp_user", JSON.stringify(parsed));
+            } catch {
+              // ignore
+            }
           }
         }
         return next;

@@ -1,17 +1,14 @@
-// Supabase client — works when env vars are set, otherwise falls back to localStorage mode
-import { createClient } from '@supabase/supabase-js';
+// Supabase browser client — uses @supabase/ssr so the session is stored in
+// cookies (not localStorage). This makes the token readable by the Next.js
+// Edge middleware, which is required for server-side auth gating.
+import { createBrowserClient } from '@supabase/ssr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// Module-level singleton. null when env vars are absent (local dev without Supabase).
 export const supabase = (supabaseUrl && supabaseKey)
-  ? createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    })
+  ? createBrowserClient(supabaseUrl, supabaseKey)
   : null;
 
 export function withAgencyFilter(query: any, agencyId: string) {

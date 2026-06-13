@@ -40,7 +40,7 @@ const navItems = (t: (k: string) => string) => [
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const { language, setLanguage, t, dir, isRTL } = useLanguage();
   const { isDark, toggleDark } = useDarkMode();
   const pathname = usePathname();
@@ -53,11 +53,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const toggleLang = () => setLanguage(language === "en" ? "ar" : "en");
 
+  // Do not redirect while auth state is still being resolved. isLoading stays
+  // true between login() resolving and onAuthStateChange setting isAuthenticated,
+  // so we must wait for it to clear before deciding to send the user away.
   useEffect(() => {
-    if (!isAuthenticated && !isPublic) {
+    if (!isLoading && !isAuthenticated && !isPublic) {
       router.push("/login");
     }
-  }, [isAuthenticated, isPublic, router]);
+  }, [isLoading, isAuthenticated, isPublic, router]);
 
   if (isPublic) {
     return <>{children}</>;
