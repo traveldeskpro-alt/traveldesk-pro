@@ -53,6 +53,8 @@ interface AuthContextType {
   logout: () => void;
   canCreateBooking: () => boolean;
   incrementDemoBooking: () => void;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -68,6 +70,8 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   canCreateBooking: () => false,
   incrementDemoBooking: () => {},
+  requestPasswordReset: async () => {},
+  updatePassword: async () => {},
 });
 
 function setAuthCookie() {
@@ -390,6 +394,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const sb = supabase;
+    if (sb) {
+      const redirectTo = typeof window !== "undefined"
+        ? `${window.location.origin}/reset-password`
+        : undefined;
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 800));
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    const sb = supabase;
+    if (sb) {
+      const { error } = await sb.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 800));
+  }, []);
+
   const logout = useCallback(() => {
     const sb = supabase;
     if (sb) {
@@ -442,6 +469,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         canCreateBooking,
         incrementDemoBooking,
+        requestPasswordReset,
+        updatePassword,
       }}
     >
       {children}

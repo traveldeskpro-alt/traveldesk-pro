@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("tdp_auth_token")?.value;
   const { pathname } = request.nextUrl;
 
-  const publicPaths = ["/login", "/signup"];
+  const publicPaths = ["/login", "/signup", "/forgot-password", "/reset-password"];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
   // For prototype, we rely on client-side auth check in AppShell

@@ -48,7 +48,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isPublic = pathname === "/login" || pathname === "/signup";
+  const isPublic = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password" || pathname === "/reset-password";
   const isDashboard = !isPublic && isAuthenticated;
 
   const toggleLang = () => setLanguage(language === "en" ? "ar" : "en");
