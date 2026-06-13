@@ -30,7 +30,7 @@ const UPCOMING = [
 
 export default function LoginPage() {
   const { language, setLanguage } = useLanguage();
-  const { login, startDemo, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,15 +48,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillDemo = async () => {
-    setError("");
-    try {
-      await startDemo();
-      router.push("/dashboard");
-    } catch {
-      setError("Something went wrong.");
-    }
-  };
 
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white">
@@ -212,13 +203,13 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button
-              onClick={fillDemo}
+            <Link
+              href="/demo"
               className="w-full py-3.5 rounded-xl border border-slate-200 bg-[#F6F8FC] text-slate-700 font-semibold text-[15px] hover:bg-slate-100 hover:border-slate-300 transition-all flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4 text-[#F97316]" />
               Explore Demo Workspace
-            </button>
+            </Link>
             <p className="text-center text-xs text-slate-400 mt-2.5">
               See how TravelDesk Pro works with sample data.
             </p>

@@ -48,7 +48,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isPublic = pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password" || pathname === "/reset-password";
+  // /demo/* is a fully isolated demo workspace with its own DemoProvider and
+  // DemoShell. Treat it as public so AppShell does not wrap it in the real
+  // authenticated sidebar or perform any session-based redirect.
+  const isPublic =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
+    pathname.startsWith("/demo");
   const isDashboard = !isPublic && isAuthenticated;
 
   const toggleLang = () => setLanguage(language === "en" ? "ar" : "en");

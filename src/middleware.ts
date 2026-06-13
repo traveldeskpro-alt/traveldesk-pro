@@ -2,7 +2,9 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Routes that do not require a session.
-const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password'];
+// /demo is the isolated demo workspace — it has its own DemoProvider and
+// never interacts with the real Supabase auth session.
+const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/demo'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

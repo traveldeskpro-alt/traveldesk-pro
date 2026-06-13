@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useCustomers, CustomerRecord } from '@/hooks/useDataStore';
 import { usePermissions } from '@/hooks/useDataStore';
-import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -13,7 +12,6 @@ import { formatCurrency } from '@/lib/utils';
 export default function CustomersPage() {
   const { customers, loading, create, update, remove, search } = useCustomers();
   const { can } = usePermissions();
-  const { isDemo } = useAuth();
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
