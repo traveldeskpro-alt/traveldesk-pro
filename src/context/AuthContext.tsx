@@ -8,6 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { supabase } from "@/lib/supabase";
+import { siteUrl } from "@/lib/siteUrl";
 
 interface User {
   id: string;
@@ -231,7 +232,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: authData, error: authError } = await sb.auth.signUp({
       email: form.email,
       password: form.password,
-      options: { data: { name: form.agencyName } },
+      options: {
+        data: { name: form.agencyName },
+        // Email-verification links must land on the canonical production
+        // domain, never on the host that happened to issue the signup.
+        emailRedirectTo: siteUrl("/dashboard"),
+      },
     });
     if (authError) throw authError;
     const uid = authData.user!.id;
@@ -277,12 +283,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const requestPasswordReset = useCallback(async (email: string) => {
     if (!supabase) throw new Error("Authentication is not configured.");
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/reset-password`
-        : undefined;
+    // Always send the reset link to the canonical production domain rather
+    // than window.location.origin, which could be a preview host or localhost.
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
+      redirectTo: siteUrl("/reset-password"),
     });
     if (error) throw error;
   }, []);
