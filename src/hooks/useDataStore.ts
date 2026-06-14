@@ -551,12 +551,28 @@ export function useInvoices() {
       created_at: new Date().toISOString(),
     };
     if (!useLocalStorage && isSupabaseEnabled && supabase) {
-      const { data: inserted, error } = await supabase.from('invoices').insert(newRecord).select().single();
-      if (!error && inserted) {
-        const parsed = { ...inserted, items: Array.isArray(inserted.items) ? inserted.items : JSON.parse(inserted.items || '[]') };
-        setInvoices((prev) => [parsed as InvoiceRecord, ...prev]);
-        return parsed as InvoiceRecord;
-      }
+      const insertPayload = {
+        id: newRecord.id,
+        agency_id: newRecord.agency_id,
+        customer_id: newRecord.customer_id,
+        customer_name: newRecord.customer_name,
+        invoice_number: newRecord.invoice_number,
+        items: newRecord.items,
+        subtotal: newRecord.subtotal,
+        tax: newRecord.tax,
+        total: newRecord.total,
+        currency: newRecord.currency,
+        status: newRecord.status,
+        issued_at: newRecord.issued_at,
+        due_date: newRecord.due_date,
+        paid_at: newRecord.paid_at ?? null,
+        created_at: newRecord.created_at,
+      };
+      const { data: inserted, error } = await supabase.from('invoices').insert(insertPayload).select().single();
+      if (error) throw error;
+      const parsed = { ...newRecord, ...inserted, items: Array.isArray(inserted.items) ? inserted.items : JSON.parse(inserted.items || '[]') };
+      setInvoices((prev) => [parsed as InvoiceRecord, ...prev]);
+      return parsed as InvoiceRecord;
     }
     setInvoices((prev) => {
       const updated = [newRecord, ...prev];
