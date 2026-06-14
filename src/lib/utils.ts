@@ -84,3 +84,50 @@ export function getBookingTypeLabel(type: string, t: (k: string) => string): str
       return type;
   }
 }
+
+// ── Export utilities ──────────────────────────────────────────────────────────
+
+// Triggers a browser download of a CSV file.
+// The UTF-8 BOM (\uFEFF) ensures Excel opens multi-byte characters (Arabic,
+// currency symbols, etc.) without garbling the first column.
+export function exportToCsv(
+  filename: string,
+  headers: string[],
+  rows: (string | number | null | undefined)[][]
+): void {
+  const escape = (v: string | number | null | undefined): string => {
+    const s = String(v ?? "");
+    // Wrap in quotes if the value contains a comma, quote, or newline.
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
+  };
+
+  const lines = [
+    headers.map(escape).join(","),
+    ...rows.map((row) => row.map(escape).join(",")),
+  ].join("\n");
+
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + lines], { type: "text/csv;charset=utf-8;" });
+  triggerDownload(blob, filename);
+}
+
+// Triggers a browser download of a formatted JSON file.
+export function exportToJson(filename: string, data: unknown): void {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json;charset=utf-8;",
+  });
+  triggerDownload(blob, filename);
+}
+
+function triggerDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { CURRENCIES, SUBSCRIPTION_PLANS, ROLES } from "@/lib/constants";
+import { exportToJson } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 import {
   Building2,
   Users,
@@ -49,10 +51,60 @@ export default function SettingsPage() {
   const { t, language, setLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState("general");
   const [saved, setSaved] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  // Exports all agency data (bookings, customers, invoices, agents) as a single
+  // JSON file. Queries Supabase directly in production; falls back to
+  // localStorage reads when Supabase is not configured.
+  const handleExportAllData = async () => {
+    if (!user?.agencyId) return;
+    setExporting(true);
+    const today = new Date().toISOString().split("T")[0];
+
+    try {
+      let data: Record<string, unknown[]>;
+
+      if (supabase) {
+        const [bookingsRes, customersRes, invoicesRes, agentsRes] = await Promise.all([
+          supabase.from("bookings").select("*").eq("agency_id", user.agencyId),
+          supabase.from("customers").select("*").eq("agency_id", user.agencyId),
+          supabase.from("invoices").select("*").eq("agency_id", user.agencyId),
+          supabase.from("agents").select("*").eq("agency_id", user.agencyId),
+        ]);
+        data = {
+          bookings:  bookingsRes.data  ?? [],
+          customers: customersRes.data ?? [],
+          invoices:  invoicesRes.data  ?? [],
+          agents:    agentsRes.data    ?? [],
+        };
+      } else {
+        // localStorage mode — read the raw stored tables directly.
+        const load = (table: string): unknown[] => {
+          if (typeof window === "undefined") return [];
+          const raw = localStorage.getItem(`tdp_${table}_${user.agencyId}`);
+          try { return raw ? JSON.parse(raw) : []; } catch { return []; }
+        };
+        data = {
+          bookings:  load("bookings"),
+          customers: load("customers"),
+          invoices:  load("invoices"),
+          agents:    load("agents"),
+        };
+      }
+
+      exportToJson(`traveldesk-export-${today}.json`, {
+        exportedAt: new Date().toISOString(),
+        agency:     agency?.name ?? user.agencyId,
+        ...data,
+      });
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -301,8 +353,13 @@ export default function SettingsPage() {
                 <p className="text-xs text-slate-500 mt-1">Switching to Arabic will enable RTL layout</p>
               </div>
               <div className="pt-4 border-t border-slate-100">
-                <button className="flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors">
-                  <Database className="w-4 h-4" /> Export all data
+                <button
+                  onClick={handleExportAllData}
+                  disabled={exporting}
+                  className="flex items-center gap-2 text-sm text-slate-700 hover:bg-slate-100 px-3 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Database className="w-4 h-4" />
+                  {exporting ? "Exporting…" : "Export all data (JSON)"}
                 </button>
               </div>
               <div className="pt-2">

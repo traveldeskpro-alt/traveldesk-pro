@@ -8,10 +8,10 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
-  Search, Filter, Plus, Plane, FileText, Hotel, Users, X,
+  Search, Download, Plus, Plane, FileText, Hotel, Users, X,
   Save, Calendar, CheckCircle, Edit2
 } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, exportToCsv } from '@/lib/utils';
 import { CURRENCIES, BOOKING_TYPES, PAYMENT_STATUSES, PROCESS_STATUSES } from '@/lib/constants';
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -163,6 +163,27 @@ export default function BookingsPage() {
     if (confirm('Delete this booking?')) remove(id);
   };
 
+  const handleExport = () => {
+    exportToCsv(
+      `bookings-${new Date().toISOString().split('T')[0]}.csv`,
+      ['ID', 'Customer', 'Type', 'Details', 'Cost Price', 'Sale Price', 'Profit', 'Commission %', 'Currency', 'Payment', 'Status', 'Date'],
+      filtered.map((b) => [
+        b.id.slice(0, 8),
+        b.customer_name,
+        typeLabels[b.type] ?? b.type,
+        b.details,
+        b.cost_price,
+        b.sale_price,
+        Number((b.sale_price - b.cost_price).toFixed(3)),
+        b.agent_commission,
+        b.currency,
+        b.payment_status,
+        b.process_status,
+        formatDate(b.created_at),
+      ])
+    );
+  };
+
   const filtered = search(query, filter);
 
   const totalRevenue = bookings.reduce((s, b) => s + b.sale_price, 0);
@@ -187,7 +208,7 @@ export default function BookingsPage() {
         </div>
         {can('create') && (
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="gap-2"><Filter className="w-4 h-4" /> Export</Button>
+            <Button variant="outline" className="gap-2" onClick={handleExport}><Download className="w-4 h-4" /> Export CSV</Button>
             <Button variant="primary" className="gap-2" onClick={openCreate}><Plus className="w-4 h-4" /> New Booking</Button>
           </div>
         )}

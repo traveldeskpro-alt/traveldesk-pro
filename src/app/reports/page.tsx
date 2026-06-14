@@ -1,7 +1,8 @@
 "use client";
 
 import { useLanguage } from "@/context/LanguageContext";
-import { formatCurrency } from "@/lib/utils";
+import { useBookings } from "@/hooks/useDataStore";
+import { formatCurrency, exportToCsv } from "@/lib/utils";
 import { Download, BarChart3, Calendar, TrendingUp, CreditCard, AlertTriangle, FileText, Users } from "lucide-react";
 import {
   BarChart,
@@ -45,6 +46,49 @@ const agentPerformance = [
 export default function ReportsPage() {
   const { t } = useLanguage();
   const currency = "OMR";
+  const { bookings } = useBookings();
+
+  // Build a monthly summary from real booking data for the Excel export.
+  // Rows are sorted chronologically. Each booking's own currency is preserved
+  // in a separate column so no cross-currency conversion is attempted.
+  const handleExportExcel = () => {
+    const today = new Date().toISOString().split("T")[0];
+
+    if (bookings.length === 0) {
+      // Export an empty template so the file still has correct headers.
+      exportToCsv(`bookings-report-${today}.csv`, [
+        "Month", "Bookings", "Revenue", "Cost", "Net Profit", "Currency",
+      ], []);
+      return;
+    }
+
+    // Group by YYYY-MM + currency (no conversion between currencies).
+    const map: Record<string, { count: number; revenue: number; cost: number }> = {};
+    bookings.forEach((b) => {
+      const key = `${b.created_at.slice(0, 7)}__${b.currency}`;
+      if (!map[key]) map[key] = { count: 0, revenue: 0, cost: 0 };
+      map[key].count   += 1;
+      map[key].revenue += b.sale_price;
+      map[key].cost    += b.cost_price;
+    });
+
+    const rows = Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, { count, revenue, cost }]) => {
+        const [month, curr] = key.split("__");
+        return [month, count, revenue.toFixed(3), cost.toFixed(3), (revenue - cost).toFixed(3), curr];
+      });
+
+    exportToCsv(
+      `bookings-report-${today}.csv`,
+      ["Month", "Bookings", "Revenue", "Cost", "Net Profit", "Currency"],
+      rows
+    );
+  };
+
+  const handleExportPdf = () => {
+    window.print();
+  };
 
   return (
     <div className="space-y-6">
@@ -54,10 +98,16 @@ export default function ReportsPage() {
           <p className="text-slate-500 text-sm mt-1">Analytics and insights</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+          <button
+            onClick={handleExportExcel}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          >
             <Download className="w-4 h-4" /> {t("exportExcel")}
           </button>
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+          <button
+            onClick={handleExportPdf}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          >
             <Download className="w-4 h-4" /> {t("exportPDF")}
           </button>
         </div>
