@@ -6,27 +6,132 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import {
-  Eye, EyeOff, Globe, ArrowRight, Sparkles, Users, Plane, Hotel,
-  FileCheck, Receipt, Building2, BarChart3, Radar, MessageCircle, Search,
+  Eye, EyeOff, Globe, ArrowRight, Wallet, Users, Plane, Hotel,
+  FileCheck, Receipt, BarChart3, TrendingUp, ArrowUpRight, ShieldCheck,
+  Cloud, Languages,
 } from "lucide-react";
 
-const FEATURES = [
-  { icon: Users, label: "Customer CRM" },
-  { icon: Plane, label: "Flight Booking" },
-  { icon: Hotel, label: "Hotel Booking" },
-  { icon: FileCheck, label: "Visa Management" },
-  { icon: Receipt, label: "Invoicing & Accounting" },
-  { icon: Building2, label: "Supplier Management" },
-  { icon: BarChart3, label: "Reports & Analytics" },
+// Static figures used purely to render the marketing dashboard preview.
+// This is a visual mock — it never reads or writes real agency data.
+const STAT_TILES = [
+  { icon: Users, label: "Customers", value: "1,284", accent: "text-[#2563EB]", bg: "bg-[#2563EB]/10" },
+  { icon: Plane, label: "Flights", value: "642", accent: "text-sky-600", bg: "bg-sky-100" },
+  { icon: Hotel, label: "Hotels", value: "318", accent: "text-violet-600", bg: "bg-violet-100" },
+  { icon: FileCheck, label: "Visas", value: "207", accent: "text-emerald-600", bg: "bg-emerald-100" },
+  { icon: Receipt, label: "Invoices", value: "1,096", accent: "text-[#F97316]", bg: "bg-[#F97316]/10" },
 ];
 
-const UPCOMING = [
-  { icon: Plane, label: "Airline API" },
-  { icon: Search, label: "PNR Search" },
-  { icon: Radar, label: "Flight Radar" },
-  { icon: MessageCircle, label: "WhatsApp API" },
-  { icon: Hotel, label: "Hotel API" },
+const ANALYTICS_BARS = [
+  { label: "Jan", height: 46 },
+  { label: "Feb", height: 62 },
+  { label: "Mar", height: 54 },
+  { label: "Apr", height: 78 },
+  { label: "May", height: 68 },
+  { label: "Jun", height: 92 },
 ];
+
+const TRUST_BADGES = [
+  { icon: ShieldCheck, label: "Bank-grade security" },
+  { icon: Cloud, label: "Cloud-based" },
+  { icon: Languages, label: "Arabic & English" },
+];
+
+function DashboardPreview() {
+  return (
+    <div className="relative w-full max-w-xl">
+      {/* Floating accent cards behind the main panel */}
+      <div className="absolute -top-5 -right-3 hidden sm:flex items-center gap-2.5 rounded-2xl bg-white px-4 py-3 shadow-xl shadow-slate-300/40 border border-slate-100">
+        <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+          <TrendingUp className="w-4 h-4 text-emerald-600" />
+        </div>
+        <div>
+          <p className="text-[11px] text-slate-400 leading-none">Net profit</p>
+          <p className="text-sm font-bold text-slate-900 leading-tight mt-1">OMR 19,430</p>
+        </div>
+      </div>
+
+      {/* Main dashboard window */}
+      <div className="relative rounded-3xl bg-white border border-slate-100 shadow-2xl shadow-slate-300/50 overflow-hidden">
+        {/* Window chrome */}
+        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
+          <span className="w-3 h-3 rounded-full bg-red-400/80" />
+          <span className="w-3 h-3 rounded-full bg-amber-400/80" />
+          <span className="w-3 h-3 rounded-full bg-emerald-400/80" />
+          <div className="ml-3 flex items-center gap-2 text-xs font-medium text-slate-400">
+            <BarChart3 className="w-3.5 h-3.5" />
+            Agency Dashboard
+          </div>
+        </div>
+
+        <div className="p-5 sm:p-6">
+          {/* Revenue highlight */}
+          <div className="rounded-2xl bg-gradient-to-br from-[#2563EB] to-[#1d4ed8] p-5 text-white shadow-lg shadow-[#2563EB]/25">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-white/70">OMR Revenue</p>
+                  <p className="text-2xl font-bold leading-tight mt-0.5">OMR 48,250</p>
+                </div>
+              </div>
+              <span className="flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold">
+                <ArrowUpRight className="w-3.5 h-3.5" />
+                12.5%
+              </span>
+            </div>
+          </div>
+
+          {/* Stat tiles */}
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {STAT_TILES.map((s) => (
+              <div key={s.label} className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+                <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
+                  <s.icon className={`w-4 h-4 ${s.accent}`} />
+                </div>
+                <p className="mt-2 text-lg font-bold text-slate-900 leading-none">{s.value}</p>
+                <p className="text-[11px] text-slate-400 mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Booking analytics */}
+          <div className="mt-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-700">Booking Analytics</p>
+              <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+                <TrendingUp className="w-3.5 h-3.5" />
+                +18% this quarter
+              </span>
+            </div>
+            <div className="mt-4 flex items-stretch justify-between gap-2 h-24">
+              {ANALYTICS_BARS.map((b, i) => (
+                <div key={b.label} className="flex flex-1 items-end justify-center">
+                  <div
+                    className={`w-full max-w-[26px] rounded-t-md ${
+                      i === ANALYTICS_BARS.length - 1
+                        ? "bg-[#F97316]"
+                        : "bg-[#2563EB]/80"
+                    }`}
+                    style={{ height: `${b.height}%` }}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex justify-between gap-2">
+              {ANALYTICS_BARS.map((b) => (
+                <span key={b.label} className="flex-1 text-center text-[10px] font-medium text-slate-400">
+                  {b.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const { language, setLanguage } = useLanguage();
@@ -48,17 +153,17 @@ export default function LoginPage() {
     }
   };
 
-
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white">
-      {/* LEFT SIDE - Hero / Branding */}
-      <div className="relative w-full lg:w-1/2 flex flex-col justify-between px-8 py-10 lg:px-16 lg:py-14 min-h-[40vh] lg:min-h-screen bg-[#F6F8FC] overflow-hidden">
-        {/* Decorative shapes */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full bg-[#2563EB]/5 blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-[460px] h-[360px] rounded-full bg-[#F97316]/5 blur-3xl" />
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#F6F8FC]">
+      {/* LEFT SIDE - Branding + Dashboard preview */}
+      <div className="relative w-full lg:w-[56%] flex flex-col justify-between px-8 py-10 lg:px-14 lg:py-12 overflow-hidden">
+        {/* Soft decorative background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-40 -left-32 w-[480px] h-[480px] rounded-full bg-[#2563EB]/5 blur-3xl" />
+          <div className="absolute bottom-[-120px] right-[-80px] w-[480px] h-[420px] rounded-full bg-[#F97316]/5 blur-3xl" />
         </div>
 
+        {/* Brand */}
         <div className="relative z-10 flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center">
             <img src="/images/icon traveldesk.png" alt="TravelDesk Pro" className="w-7 h-7 object-contain" />
@@ -69,37 +174,35 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="relative z-10 flex-1 flex flex-col justify-center max-w-lg mt-8 lg:mt-0">
-          <h1 className="text-4xl lg:text-[3.4rem] font-bold text-slate-900 leading-[1.1] tracking-tight">
-            Smart. Simple.
-            <br />
-            <span className="text-[#2563EB]">Powerful.</span>
-          </h1>
-          <p className="mt-5 text-lg text-slate-500 leading-relaxed max-w-md">
-            The complete platform for modern travel agencies.
-          </p>
-
-          <div className="mt-9 grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {FEATURES.map((f) => (
-              <div key={f.label} className="bg-white border border-slate-100 rounded-2xl p-3.5 shadow-sm flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#2563EB]/10 flex items-center justify-center shrink-0">
-                  <f.icon className="w-4 h-4 text-[#2563EB]" />
-                </div>
-                <p className="font-medium text-slate-700 text-[13px] leading-tight">{f.label}</p>
-              </div>
-            ))}
+        {/* Headline + preview */}
+        <div className="relative z-10 flex-1 flex flex-col justify-center py-10 lg:py-0">
+          <div className="max-w-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500 shadow-sm">
+              <BarChart3 className="w-3.5 h-3.5 text-[#2563EB]" />
+              Travel Agency Management Platform
+            </span>
+            <h1 className="mt-5 text-3xl lg:text-[2.75rem] font-bold text-slate-900 leading-[1.1] tracking-tight">
+              Run your agency from
+              <br className="hidden sm:block" />
+              <span className="text-[#2563EB]"> one command center.</span>
+            </h1>
+            <p className="mt-4 text-base lg:text-lg text-slate-500 leading-relaxed max-w-md">
+              Customers, flights, hotels, visas, invoices, and revenue — managed in real time.
+            </p>
           </div>
 
-          <div className="mt-8">
-            <p className="text-xs font-semibold tracking-wider text-[#F97316] uppercase mb-3">Coming Soon</p>
-            <div className="flex flex-wrap gap-2">
-              {UPCOMING.map((u) => (
-                <div key={u.label} className="flex items-center gap-1.5 bg-white border border-dashed border-slate-200 rounded-full px-3 py-1.5 text-xs font-medium text-slate-500">
-                  <u.icon className="w-3.5 h-3.5 text-[#F97316]" />
-                  {u.label}
-                </div>
-              ))}
-            </div>
+          <div className="mt-9 hidden md:flex">
+            <DashboardPreview />
+          </div>
+
+          {/* Trust badges */}
+          <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
+            {TRUST_BADGES.map((b) => (
+              <div key={b.label} className="flex items-center gap-2 text-slate-500">
+                <b.icon className="w-4 h-4 text-[#2563EB]" />
+                <span className="text-sm font-medium">{b.label}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -111,10 +214,10 @@ export default function LoginPage() {
       </div>
 
       {/* RIGHT SIDE - Login Card */}
-      <div className="relative w-full lg:w-1/2 flex flex-col items-center justify-center px-6 py-10 lg:px-12 bg-white">
-        <div className="w-full max-w-[440px]">
-          <div className="bg-white border border-slate-100 rounded-[28px] shadow-xl shadow-slate-200/50 p-8 lg:p-10">
-            <div className="text-center mb-8">
+      <div className="relative w-full lg:w-[44%] flex flex-col items-center justify-center px-6 py-10 lg:px-14 bg-white lg:shadow-[-20px_0_60px_-30px_rgba(15,23,42,0.15)]">
+        <div className="w-full max-w-[460px]">
+          <div className="bg-white border border-slate-100 rounded-[28px] shadow-xl shadow-slate-200/60 p-8 lg:p-10">
+            <div className="mb-8">
               <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
               <p className="text-sm text-slate-500 mt-1.5">Sign in to your agency workspace</p>
             </div>
@@ -194,64 +297,22 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white px-4 text-sm text-slate-400">or</span>
-              </div>
-            </div>
-
-            <Link
-              href="/demo"
-              className="w-full py-3.5 rounded-xl border border-slate-200 bg-[#F6F8FC] text-slate-700 font-semibold text-[15px] hover:bg-slate-100 hover:border-slate-300 transition-all flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4 text-[#F97316]" />
-              Explore Demo Workspace
-            </Link>
-            <p className="text-center text-xs text-slate-400 mt-2.5">
-              See how TravelDesk Pro works with sample data.
-            </p>
-
-            <div className="mt-6">
-              <Link href="/signup" className="block w-full text-center py-3 rounded-xl border border-[#2563EB]/20 bg-[#2563EB]/5 text-[#2563EB] font-semibold text-sm hover:bg-[#2563EB]/10 transition-all">
-                Create Account — Start Free Trial
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-5 text-center">
-            <p className="text-sm text-slate-500">
+            <p className="mt-7 text-center text-sm text-slate-500">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-[#2563EB] hover:text-[#1d4ed8] font-medium transition-colors">
-                Create Account
+              <Link href="/signup" className="text-[#2563EB] hover:text-[#1d4ed8] font-semibold transition-colors">
+                Create account
               </Link>
             </p>
           </div>
 
-          <div className="mt-6 flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-5">
-              <div className="flex items-center gap-1.5 text-slate-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                <span className="text-xs font-medium">Secure</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
-                <span className="text-xs font-medium">Cloud-Based</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>
-                <span className="text-xs font-medium">Arabic Support</span>
-              </div>
-            </div>
-
+          {/* Footer row: language toggle */}
+          <div className="mt-6 flex items-center justify-center">
             <button
               onClick={() => setLanguage(language === "en" ? "ar" : "en")}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
               <Globe className="w-3.5 h-3.5" />
-              <span className="uppercase">{language === "en" ? "EN" : "AR"}</span>
+              <span className="uppercase">{language === "en" ? "English" : "العربية"}</span>
             </button>
           </div>
         </div>
