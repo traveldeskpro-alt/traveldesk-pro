@@ -390,11 +390,15 @@ export function useBookings() {
     };
     if (!useLocalStorage && isSupabaseEnabled && supabase) {
       const { data: inserted, error } = await supabase.from('bookings').insert(newRecord).select().single();
-      if (!error && inserted) {
-        setBookings((prev) => [inserted as BookingRecord, ...prev]);
-        return inserted as BookingRecord;
-      }
+      // In production mode, never silently fall back to localStorage.
+      // Throw so the page-level try/catch surfaces the message to the user.
+      if (error) throw new Error(error.message);
+      setBookings((prev) => [inserted as BookingRecord, ...prev]);
+      return inserted as BookingRecord;
     }
+
+    // localStorage path — only reached in demo mode (useLocalStorage = true)
+    // or when Supabase is not configured (local dev without .env).
     setBookings((prev) => {
       const updated = [newRecord, ...prev];
       saveTable(agencyId, 'bookings', updated);

@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useBookings, BookingRecord } from '@/hooks/useDataStore';
+import Link from 'next/link';
+import { useBookings, useCustomers, BookingRecord } from '@/hooks/useDataStore';
 import { usePermissions } from '@/hooks/useDataStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
   Search, Filter, Plus, Plane, FileText, Hotel, Users, X,
-  Save, Calendar, Phone, Mail, User, CheckCircle, Edit2
+  Save, Calendar, CheckCircle, Edit2
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { CURRENCIES, BOOKING_TYPES, PAYMENT_STATUSES, PROCESS_STATUSES } from '@/lib/constants';
@@ -47,6 +48,7 @@ const processColors: Record<string, string> = {
 
 export default function BookingsPage() {
   const { bookings, loading, create, update, remove, search } = useBookings();
+  const { customers } = useCustomers();
   const { can } = usePermissions();
   const { t } = useLanguage();
   const [filter, setFilter] = useState('all');
@@ -56,13 +58,15 @@ export default function BookingsPage() {
   const [editing, setEditing] = useState<BookingRecord | null>(null);
 
   const [form, setForm] = useState<{
-    customer_name: string; phone: string; email: string; type: 'air_ticket' | 'visa' | 'hotel' | 'group_tour';
+    customer_id: string;
+    customer_name: string;
+    type: 'air_ticket' | 'visa' | 'hotel' | 'group_tour';
     details: string; cost_price: string; sale_price: string; agent_commission: string;
     currency: string; payment_status: 'paid' | 'pending' | 'refund';
-    process_status: 'pending' | 'processing' | 'approved' | 'rejected' | 'issued'; agent_name: string;
-    date: string;
+    process_status: 'pending' | 'processing' | 'approved' | 'rejected' | 'issued';
+    agent_name: string; date: string;
   }>({
-    customer_name: '', phone: '', email: '', type: 'air_ticket',
+    customer_id: '', customer_name: '', type: 'air_ticket',
     details: '', cost_price: '', sale_price: '', agent_commission: '',
     currency: 'OMR', payment_status: 'pending',
     process_status: 'pending', agent_name: '',
@@ -71,12 +75,23 @@ export default function BookingsPage() {
 
   const resetForm = () => {
     setForm({
-      customer_name: '', phone: '', email: '', type: 'air_ticket',
+      customer_id: '', customer_name: '', type: 'air_ticket',
       details: '', cost_price: '', sale_price: '', agent_commission: '',
       currency: 'OMR', payment_status: 'pending', process_status: 'pending',
       agent_name: '', date: new Date().toISOString().split('T')[0],
     });
     setEditing(null);
+  };
+
+  // Populates both customer_id (real UUID) and customer_name when a customer
+  // is selected from the dropdown.
+  const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const c = customers.find((x) => x.id === e.target.value);
+    setForm((prev) => ({
+      ...prev,
+      customer_id: e.target.value,
+      customer_name: c?.name ?? '',
+    }));
   };
 
   const openCreate = () => {
@@ -87,21 +102,34 @@ export default function BookingsPage() {
 
   const openEdit = (b: BookingRecord) => {
     setForm({
-      customer_name: b.customer_name, phone: '', email: '', type: b.type,
-      details: b.details, cost_price: String(b.cost_price), sale_price: String(b.sale_price),
-      agent_commission: String(b.agent_commission), currency: b.currency,
-      payment_status: b.payment_status, process_status: b.process_status,
-      agent_name: b.agent_name || '', date: b.created_at.split('T')[0],
+      customer_id: b.customer_id,
+      customer_name: b.customer_name,
+      type: b.type,
+      details: b.details,
+      cost_price: String(b.cost_price),
+      sale_price: String(b.sale_price),
+      agent_commission: String(b.agent_commission),
+      currency: b.currency,
+      payment_status: b.payment_status,
+      process_status: b.process_status,
+      agent_name: b.agent_name || '',
+      date: b.created_at.split('T')[0],
     });
     setEditing(b);
+    setSaveError(null);
     setShowModal(true);
   };
 
   const handleSave = async () => {
-    if (!form.customer_name || !form.sale_price) return;
+    if (!form.customer_id) {
+      setSaveError('Please select a customer from the list.');
+      return;
+    }
+    if (!form.sale_price) return;
     setSaveError(null);
     const data = {
-      customer_id: generateId(),
+      // Use the real customer UUID — never generate a fake one.
+      customer_id: form.customer_id,
       customer_name: form.customer_name,
       type: form.type,
       details: form.details,
@@ -117,14 +145,16 @@ export default function BookingsPage() {
     };
     try {
       if (editing) {
-        await update(editing.id, { ...data, customer_id: editing.customer_id });
+        // Pass data directly so the customer can be changed in edit mode.
+        await update(editing.id, data);
       } else {
         await create(data);
       }
       setShowModal(false);
       resetForm();
     } catch (err: any) {
-      // Surfaces demo booking-limit errors and any Supabase write errors.
+      // Surfaces the Supabase error (FK violation, RLS rejection, etc.)
+      // and the demo booking-limit message.
       setSaveError(err?.message ?? 'Failed to save booking. Please try again.');
     }
   };
@@ -280,17 +310,41 @@ export default function BookingsPage() {
             </div>
             <div className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Customer selector — uses the real customers.id UUID as FK */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Customer Name *</label>
-                  <input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="Full name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Phone / WhatsApp</label>
-                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="+968 0000 0000" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="customer@email.com" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Customer *</label>
+                  {customers.length === 0 ? (
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-800">
+                      <Users className="w-4 h-4 shrink-0" />
+                      No customers found.{' '}
+                      <Link
+                        href="/customers"
+                        className="underline font-medium hover:text-amber-900"
+                        onClick={() => setShowModal(false)}
+                      >
+                        Add a customer first
+                      </Link>
+                    </div>
+                  ) : (
+                    <select
+                      value={form.customer_id}
+                      onChange={handleCustomerChange}
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                    >
+                      <option value="">— Select customer —</option>
+                      {customers.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} — {c.phone}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {/* Warn when editing a booking whose customer was deleted */}
+                  {editing && form.customer_id && !customers.find((c) => c.id === form.customer_id) && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      Previous customer "{form.customer_name}" is no longer in the list. Select a replacement or keep the existing record.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Booking Type</label>
@@ -346,4 +400,3 @@ export default function BookingsPage() {
   );
 }
 
-function generateId() { return Math.random().toString(36).substring(2, 15); }
