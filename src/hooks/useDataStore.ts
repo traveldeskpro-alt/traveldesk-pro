@@ -551,6 +551,13 @@ export function useInvoices() {
       created_at: new Date().toISOString(),
     };
     if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!UUID_RE.test(newRecord.agency_id)) {
+        throw new Error(`agency_id is not a valid UUID: "${newRecord.agency_id}". Ensure you are logged in with a valid agency account.`);
+      }
+      if (!UUID_RE.test(newRecord.customer_id)) {
+        throw new Error(`customer_id is not a valid UUID: "${newRecord.customer_id}". Please select a customer from the dropdown.`);
+      }
       const insertPayload = {
         id: newRecord.id,
         agency_id: newRecord.agency_id,
@@ -569,7 +576,10 @@ export function useInvoices() {
         created_at: newRecord.created_at,
       };
       const { data: inserted, error } = await supabase.from('invoices').insert(insertPayload).select().single();
-      if (error) throw error;
+      if (error) {
+        console.error('[useInvoices] Supabase insert error:', error.message, error.details, error.hint, error.code);
+        throw error;
+      }
       const parsed = { ...newRecord, ...inserted, items: Array.isArray(inserted.items) ? inserted.items : JSON.parse(inserted.items || '[]') };
       setInvoices((prev) => [parsed as InvoiceRecord, ...prev]);
       return parsed as InvoiceRecord;

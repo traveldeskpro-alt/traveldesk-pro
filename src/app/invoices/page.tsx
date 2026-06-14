@@ -33,6 +33,8 @@ export default function InvoicesPage() {
   const [showWhatsApp, setShowWhatsApp] = useState<typeof invoices[0] | null>(null);
   const [query, setQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
     customer_id: '',
@@ -124,49 +126,74 @@ export default function InvoicesPage() {
       due_date: '',
       notes: invoiceSettings.defaultNotes,
     });
+    setSaveError(null);
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (!form.customer_name || !form.invoice_number || form.total <= 0) return;
-    create({
-      customer_id: form.customer_id || generateId(),
-      customer_name: form.customer_name,
-      customer_passport: form.customer_passport,
-      customer_phone: form.customer_phone,
-      customer_email: form.customer_email,
-      customer_nationality: form.customer_nationality,
-      invoice_number: form.invoice_number,
-      prefix: form.prefix,
-      sequence: parseInt(form.invoice_number.split('-').pop() || '0'),
-      items: form.items,
-      subtotal: form.subtotal,
-      tax_enabled: form.tax_enabled,
-      tax_percentage: form.tax_percentage,
-      tax: form.tax,
-      total: form.total,
-      currency: form.currency,
-      status: form.status,
-      issued_at: form.issued_at,
-      due_date: form.due_date,
-      notes: form.notes,
-      agency_branding: {
-        logo_url: branding.logoUrl || agency?.logoUrl,
-        name: branding.name || agency?.name,
-        address: branding.address || agency?.address,
-        phone: branding.phone || agency?.phone,
-        email: branding.email || agency?.email,
-        website: branding.website,
-        cr_number: branding.crNumber,
-        vat_number: branding.vatNumber,
-        bank_name: branding.bankName,
-        account_name: branding.accountName,
-        account_number: branding.accountNumber,
-        iban: branding.iban,
-        swift_code: branding.swiftCode,
-      },
-    });
-    setShowModal(false);
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  const handleSave = async () => {
+    setSaveError(null);
+
+    if (!form.customer_id || !UUID_RE.test(form.customer_id)) {
+      setSaveError('Please select a customer from the dropdown before saving.');
+      return;
+    }
+    if (!user?.agencyId || !UUID_RE.test(user.agencyId)) {
+      setSaveError('Your agency account is not properly set up. Please log out and log in again.');
+      return;
+    }
+    if (!form.invoice_number || form.total <= 0) {
+      setSaveError('Invoice number and a positive total are required.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await create({
+        customer_id: form.customer_id,
+        customer_name: form.customer_name,
+        customer_passport: form.customer_passport,
+        customer_phone: form.customer_phone,
+        customer_email: form.customer_email,
+        customer_nationality: form.customer_nationality,
+        invoice_number: form.invoice_number,
+        prefix: form.prefix,
+        sequence: parseInt(form.invoice_number.split('-').pop() || '0'),
+        items: form.items,
+        subtotal: form.subtotal,
+        tax_enabled: form.tax_enabled,
+        tax_percentage: form.tax_percentage,
+        tax: form.tax,
+        total: form.total,
+        currency: form.currency,
+        status: form.status,
+        issued_at: form.issued_at,
+        due_date: form.due_date,
+        notes: form.notes,
+        agency_branding: {
+          logo_url: branding.logoUrl || agency?.logoUrl,
+          name: branding.name || agency?.name,
+          address: branding.address || agency?.address,
+          phone: branding.phone || agency?.phone,
+          email: branding.email || agency?.email,
+          website: branding.website,
+          cr_number: branding.crNumber,
+          vat_number: branding.vatNumber,
+          bank_name: branding.bankName,
+          account_name: branding.accountName,
+          account_number: branding.accountNumber,
+          iban: branding.iban,
+          swift_code: branding.swiftCode,
+        },
+      });
+      setShowModal(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : (err as any)?.message ?? 'Failed to save invoice. Please try again.';
+      setSaveError(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -544,11 +571,19 @@ export default function InvoicesPage() {
               )}
             </div>
 
-            <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={handleSave} className="gap-2">
-                <Save className="w-4 h-4" /> Save Invoice
-              </Button>
+            <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 space-y-3">
+              {saveError && (
+                <div className="flex items-start gap-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowModal(false)} disabled={saving}>Cancel</Button>
+                <Button variant="primary" onClick={handleSave} className="gap-2" disabled={saving}>
+                  <Save className="w-4 h-4" /> {saving ? 'Saving…' : 'Save Invoice'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
