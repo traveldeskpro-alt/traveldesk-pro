@@ -25,18 +25,23 @@ import {
   Sun,
   Moon,
   Plane,
+  CreditCard,
 } from "lucide-react";
 
-const navItems = (t: (k: string) => string) => [
+const navItems = (t: (k: string) => string, role?: string) => [
   { label: t("commandCenter"), href: "/dashboard", icon: LayoutDashboard },
   { label: t("bookings"), href: "/bookings", icon: Ticket },
   { label: t("customers"), href: "/customers", icon: Users },
   { label: t("invoices"), href: "/invoices", icon: FileText },
+  { label: "Payments", href: "/payments", icon: CreditCard },
   { label: t("agents"), href: "/agents", icon: UserCheck },
   { label: t("reports"), href: "/reports", icon: BarChart3 },
   { label: t("calendar"), href: "/calendar", icon: Calendar },
   { label: t("settings"), href: "/settings", icon: Settings },
-  { label: t("admin"), href: "/admin", icon: ShieldCheck },
+  // Admin panel: visible only to owner / admin / super_admin
+  ...(role === "owner" || role === "admin" || role === "super_admin"
+    ? [{ label: t("admin"), href: "/admin", icon: ShieldCheck }]
+    : []),
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -143,7 +148,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems(t).map((item) => {
+          {navItems(t, user?.role).map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
