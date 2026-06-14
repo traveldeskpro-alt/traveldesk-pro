@@ -6,8 +6,9 @@ import { usePermissions } from '@/hooks/useDataStore';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Search, Plus, Phone, Mail, MapPin, Edit2, Trash2, X, Save, Users, UserCheck, DollarSign } from 'lucide-react';
+import { Search, Plus, Phone, Mail, MapPin, Edit2, Trash2, X, Save, Users, UserCheck, DollarSign, Download } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { exportCSV, exportXLSX } from '@/lib/export';
 
 export default function CustomersPage() {
   const { customers, loading, create, update, remove, search } = useCustomers();
@@ -57,6 +58,26 @@ export default function CustomersPage() {
   const totalBookings = customers.reduce((s, c) => s + c.total_bookings, 0);
   const totalSpend = customers.reduce((s, c) => s + c.total_spend, 0);
 
+  const handleExportCSV = () => exportCSV(
+    customers.map((c) => ({
+      Name: c.name, Phone: c.phone, Email: c.email,
+      Nationality: c.nationality, Passport: c.passport_number ?? '',
+      'Passport Expiry': c.passport_expiry ?? '',
+      'Total Bookings': c.total_bookings, 'Total Spend': c.total_spend,
+    })),
+    `customers-${new Date().toISOString().split('T')[0]}`
+  );
+
+  const handleExportXLSX = () => exportXLSX(
+    customers.map((c) => ({
+      Name: c.name, Phone: c.phone, Email: c.email,
+      Nationality: c.nationality, Passport: c.passport_number ?? '',
+      'Passport Expiry': c.passport_expiry ?? '',
+      'Total Bookings': c.total_bookings, 'Total Spend': c.total_spend,
+    })),
+    `customers-${new Date().toISOString().split('T')[0]}`, 'Customers'
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -73,11 +94,19 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-bold text-[#0F172A]">Customers</h1>
           <p className="text-sm text-slate-500 mt-1">Manage your customer database</p>
         </div>
-        {can('create') && (
-          <Button variant="primary" className="gap-2" onClick={openCreate}>
-            <Plus className="w-4 h-4" /> Add Customer
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <button onClick={handleExportCSV} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+            <Download className="w-4 h-4" /> CSV
+          </button>
+          <button onClick={handleExportXLSX} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+            <Download className="w-4 h-4" /> Excel
+          </button>
+          {can('create') && (
+            <Button variant="primary" className="gap-2" onClick={openCreate}>
+              <Plus className="w-4 h-4" /> Add Customer
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}

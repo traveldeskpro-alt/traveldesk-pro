@@ -8,9 +8,10 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
-  Search, Filter, Plus, Plane, FileText, Hotel, Users, X,
-  Save, Calendar, CheckCircle, Edit2
+  Search, Plus, Plane, FileText, Hotel, Users, X,
+  Save, Calendar, CheckCircle, Edit2, Download
 } from 'lucide-react';
+import { exportCSV, exportXLSX } from '@/lib/export';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { CURRENCIES, BOOKING_TYPES, PAYMENT_STATUSES, PROCESS_STATUSES } from '@/lib/constants';
 
@@ -165,6 +166,28 @@ export default function BookingsPage() {
 
   const filtered = search(query, filter);
 
+  const handleExportCSV = () => exportCSV(
+    bookings.map((b) => ({
+      Customer: b.customer_name, Type: typeLabels[b.type] ?? b.type,
+      'Sale Price': b.sale_price, 'Cost Price': b.cost_price,
+      Profit: b.sale_price - b.cost_price, Currency: b.currency,
+      'Payment Status': b.payment_status, 'Process Status': b.process_status,
+      Date: formatDate(b.created_at),
+    })),
+    `bookings-${new Date().toISOString().split('T')[0]}`
+  );
+
+  const handleExportXLSX = () => exportXLSX(
+    bookings.map((b) => ({
+      Customer: b.customer_name, Type: typeLabels[b.type] ?? b.type,
+      'Sale Price': b.sale_price, 'Cost Price': b.cost_price,
+      Profit: b.sale_price - b.cost_price, Currency: b.currency,
+      'Payment Status': b.payment_status, 'Process Status': b.process_status,
+      Date: formatDate(b.created_at),
+    })),
+    `bookings-${new Date().toISOString().split('T')[0]}`, 'Bookings'
+  );
+
   const totalRevenue = bookings.reduce((s, b) => s + b.sale_price, 0);
   const totalCost = bookings.reduce((s, b) => s + b.cost_price, 0);
   const totalProfit = totalRevenue - totalCost;
@@ -185,12 +208,17 @@ export default function BookingsPage() {
           <h1 className="text-2xl font-bold text-[#0F172A]">Bookings</h1>
           <p className="text-sm text-slate-500 mt-1">Manage all transactions</p>
         </div>
-        {can('create') && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="gap-2"><Filter className="w-4 h-4" /> Export</Button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleExportCSV} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+            <Download className="w-4 h-4" /> CSV
+          </button>
+          <button onClick={handleExportXLSX} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+            <Download className="w-4 h-4" /> Excel
+          </button>
+          {can('create') && (
             <Button variant="primary" className="gap-2" onClick={openCreate}><Plus className="w-4 h-4" /> New Booking</Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Stats */}
