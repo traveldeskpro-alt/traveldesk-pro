@@ -5,6 +5,8 @@ import { useInvoices, InvoiceItem, useInvoiceSettings, useAgencyBranding, useCus
 import { usePermissions } from '@/hooks/useDataStore';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useDataMode } from '@/context/DataModeContext';
+import { supabase } from '@/lib/supabase';
 import { Search, Plus, X, Save, Printer, Download, MessageCircle, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Send, Smartphone } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { CURRENCIES, getCurrencySymbol, INVOICE_STATUS_COLORS, WHATSAPP_TEMPLATES } from '@/lib/constants';
@@ -23,6 +25,7 @@ export default function InvoicesPage() {
   const { can } = usePermissions();
   const { user, agency } = useAuth();
   const { t } = useLanguage();
+  const { useLocalStorage } = useDataMode();
   const { settings: invoiceSettings, generateNumber } = useInvoiceSettings();
   const { branding } = useAgencyBranding();
   const { customers } = useCustomers();
@@ -33,6 +36,13 @@ export default function InvoicesPage() {
   const [showWhatsApp, setShowWhatsApp] = useState<typeof invoices[0] | null>(null);
   const [query, setQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // ── DEBUG STATE (remove after confirming Supabase insert works) ──
+  const [debugLastPayload, setDebugLastPayload] = useState<object | null>(null);
+  const [debugLastResult, setDebugLastResult] = useState<string | null>(null);
+  const [testRunning, setTestRunning] = useState(false);
 
   const [form, setForm] = useState({
     customer_id: '',
@@ -124,49 +134,138 @@ export default function InvoicesPage() {
       due_date: '',
       notes: invoiceSettings.defaultNotes,
     });
+    setSaveError(null);
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (!form.customer_name || !form.invoice_number || form.total <= 0) return;
-    create({
-      customer_id: form.customer_id || generateId(),
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  // ── DEBUG: direct Supabase test insert (bypasses hook) ──
+  const runTestInsert = async () => {
+    setDebugLastResult(null);
+    setTestRunning(true);
+    if (!supabase) {
+      setDebugLastResult('ERROR: supabase client is null — env vars missing');
+      setTestRunning(false);
+      return;
+    }
+    if (!form.customer_id || !UUID_RE.test(form.customer_id)) {
+      setDebugLastResult('ERROR: no valid customer_id selected. Pick a customer in the form first.');
+      setTestRunning(false);
+      return;
+    }
+    if (!user?.agencyId || !UUID_RE.test(user.agencyId)) {
+      setDebugLastResult(`ERROR: user.agencyId is invalid: "${user?.agencyId}"`);
+      setTestRunning(false);
+      return;
+    }
+    const testPayload = {
+      id: crypto.randomUUID(),
+      agency_id: user.agencyId,
+      customer_id: form.customer_id,
+      customer_name: form.customer_name || 'Debug Test',
+      invoice_number: `DEBUG-${Date.now()}`,
+      items: [] as object[],
+      subtotal: 0,
+      tax: 0,
+      total: 1,
+      currency: 'OMR',
+      status: 'pending' as const,
+      issued_at: new Date().toISOString(),
+      due_date: new Date().toISOString(),
+      paid_at: null,
+      created_at: new Date().toISOString(),
+    };
+    setDebugLastPayload(testPayload);
+    const { data, error } = await supabase.from('invoices').insert(testPayload).select().single();
+    if (error) {
+      setDebugLastResult(`SUPABASE ERROR — code: ${error.code} | message: ${error.message} | details: ${error.details} | hint: ${error.hint}`);
+    } else {
+      setDebugLastResult(`SUCCESS — inserted row id: ${data?.id}`);
+    }
+    setTestRunning(false);
+  };
+
+  const handleSave = async () => {
+    setSaveError(null);
+    setDebugLastResult(null);
+
+    if (!form.customer_id || !UUID_RE.test(form.customer_id)) {
+      setSaveError('Please select a customer from the dropdown before saving.');
+      return;
+    }
+    if (!user?.agencyId || !UUID_RE.test(user.agencyId)) {
+      setSaveError('Your agency account is not properly set up. Please log out and log in again.');
+      return;
+    }
+    if (!form.invoice_number || form.total <= 0) {
+      setSaveError('Invoice number and a positive total are required.');
+      return;
+    }
+
+    const capturedPayload = {
+      agency_id: user.agencyId,
+      customer_id: form.customer_id,
       customer_name: form.customer_name,
-      customer_passport: form.customer_passport,
-      customer_phone: form.customer_phone,
-      customer_email: form.customer_email,
-      customer_nationality: form.customer_nationality,
       invoice_number: form.invoice_number,
-      prefix: form.prefix,
-      sequence: parseInt(form.invoice_number.split('-').pop() || '0'),
-      items: form.items,
       subtotal: form.subtotal,
-      tax_enabled: form.tax_enabled,
-      tax_percentage: form.tax_percentage,
       tax: form.tax,
       total: form.total,
       currency: form.currency,
       status: form.status,
       issued_at: form.issued_at,
       due_date: form.due_date,
-      notes: form.notes,
-      agency_branding: {
-        logo_url: branding.logoUrl || agency?.logoUrl,
-        name: branding.name || agency?.name,
-        address: branding.address || agency?.address,
-        phone: branding.phone || agency?.phone,
-        email: branding.email || agency?.email,
-        website: branding.website,
-        cr_number: branding.crNumber,
-        vat_number: branding.vatNumber,
-        bank_name: branding.bankName,
-        account_name: branding.accountName,
-        account_number: branding.accountNumber,
-        iban: branding.iban,
-        swift_code: branding.swiftCode,
-      },
-    });
-    setShowModal(false);
+    };
+    setDebugLastPayload(capturedPayload);
+
+    setSaving(true);
+    try {
+      await create({
+        customer_id: form.customer_id,
+        customer_name: form.customer_name,
+        customer_passport: form.customer_passport,
+        customer_phone: form.customer_phone,
+        customer_email: form.customer_email,
+        customer_nationality: form.customer_nationality,
+        invoice_number: form.invoice_number,
+        prefix: form.prefix,
+        sequence: parseInt(form.invoice_number.split('-').pop() || '0'),
+        items: form.items,
+        subtotal: form.subtotal,
+        tax_enabled: form.tax_enabled,
+        tax_percentage: form.tax_percentage,
+        tax: form.tax,
+        total: form.total,
+        currency: form.currency,
+        status: form.status,
+        issued_at: form.issued_at,
+        due_date: form.due_date,
+        notes: form.notes,
+        agency_branding: {
+          logo_url: branding.logoUrl || agency?.logoUrl,
+          name: branding.name || agency?.name,
+          address: branding.address || agency?.address,
+          phone: branding.phone || agency?.phone,
+          email: branding.email || agency?.email,
+          website: branding.website,
+          cr_number: branding.crNumber,
+          vat_number: branding.vatNumber,
+          bank_name: branding.bankName,
+          account_name: branding.accountName,
+          account_number: branding.accountNumber,
+          iban: branding.iban,
+          swift_code: branding.swiftCode,
+        },
+      });
+      setDebugLastResult('handleSave SUCCESS — modal closed');
+      setShowModal(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : (err as any)?.message ?? 'Failed to save invoice. Please try again.';
+      setSaveError(msg);
+      setDebugLastResult(`handleSave THREW: ${msg}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -226,6 +325,39 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
+      {/* ── DEBUG PANEL (invoice-fix-v2) — remove after Supabase insert confirmed ── */}
+      <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-4 font-mono text-xs space-y-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <span className="font-bold text-amber-800 text-sm">🔧 DEBUG PANEL — invoice-fix-v2</span>
+          <button
+            onClick={runTestInsert}
+            disabled={testRunning}
+            className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold disabled:opacity-50"
+          >
+            {testRunning ? 'Testing…' : '⚡ Test Supabase Invoice Insert'}
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-amber-900">
+          <div><span className="text-amber-600">build:</span> invoice-fix-v2</div>
+          <div><span className="text-amber-600">useLocalStorage:</span> {String(useLocalStorage)}</div>
+          <div><span className="text-amber-600">supabase configured:</span> {supabase ? 'YES ✅' : 'NO ❌ (env vars missing)'}</div>
+          <div><span className="text-amber-600">user.agencyId:</span> {user?.agencyId ?? 'null ❌'}</div>
+          <div className="sm:col-span-2"><span className="text-amber-600">selected customer_id:</span> {form.customer_id || '(none — select customer first)'}</div>
+        </div>
+        {debugLastPayload && (
+          <div>
+            <div className="text-amber-600 font-semibold">Last insert payload:</div>
+            <pre className="bg-amber-100 rounded p-2 overflow-x-auto text-amber-900 text-xs">{JSON.stringify(debugLastPayload, null, 2)}</pre>
+          </div>
+        )}
+        {debugLastResult && (
+          <div className={`rounded p-2 font-semibold ${debugLastResult.startsWith('SUCCESS') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {debugLastResult}
+          </div>
+        )}
+      </div>
+      {/* ── END DEBUG PANEL ── */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#0F172A]">Invoices</h1>
@@ -544,11 +676,19 @@ export default function InvoicesPage() {
               )}
             </div>
 
-            <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
-              <Button variant="primary" onClick={handleSave} className="gap-2">
-                <Save className="w-4 h-4" /> Save Invoice
-              </Button>
+            <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 space-y-3">
+              {saveError && (
+                <div className="flex items-start gap-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
+                  <span>{saveError}</span>
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowModal(false)} disabled={saving}>Cancel</Button>
+                <Button variant="primary" onClick={handleSave} className="gap-2" disabled={saving}>
+                  <Save className="w-4 h-4" /> {saving ? 'Saving…' : 'Save Invoice'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

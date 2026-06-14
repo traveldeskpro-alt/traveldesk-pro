@@ -551,12 +551,38 @@ export function useInvoices() {
       created_at: new Date().toISOString(),
     };
     if (!useLocalStorage && isSupabaseEnabled && supabase) {
-      const { data: inserted, error } = await supabase.from('invoices').insert(newRecord).select().single();
-      if (!error && inserted) {
-        const parsed = { ...inserted, items: Array.isArray(inserted.items) ? inserted.items : JSON.parse(inserted.items || '[]') };
-        setInvoices((prev) => [parsed as InvoiceRecord, ...prev]);
-        return parsed as InvoiceRecord;
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!UUID_RE.test(newRecord.agency_id)) {
+        throw new Error(`agency_id is not a valid UUID: "${newRecord.agency_id}". Ensure you are logged in with a valid agency account.`);
       }
+      if (!UUID_RE.test(newRecord.customer_id)) {
+        throw new Error(`customer_id is not a valid UUID: "${newRecord.customer_id}". Please select a customer from the dropdown.`);
+      }
+      const insertPayload = {
+        id: newRecord.id,
+        agency_id: newRecord.agency_id,
+        customer_id: newRecord.customer_id,
+        customer_name: newRecord.customer_name,
+        invoice_number: newRecord.invoice_number,
+        items: newRecord.items,
+        subtotal: newRecord.subtotal,
+        tax: newRecord.tax,
+        total: newRecord.total,
+        currency: newRecord.currency,
+        status: newRecord.status,
+        issued_at: newRecord.issued_at,
+        due_date: newRecord.due_date,
+        paid_at: newRecord.paid_at ?? null,
+        created_at: newRecord.created_at,
+      };
+      const { data: inserted, error } = await supabase.from('invoices').insert(insertPayload).select().single();
+      if (error) {
+        console.error('[useInvoices] Supabase insert error:', error.message, error.details, error.hint, error.code);
+        throw error;
+      }
+      const parsed = { ...newRecord, ...inserted, items: Array.isArray(inserted.items) ? inserted.items : JSON.parse(inserted.items || '[]') };
+      setInvoices((prev) => [parsed as InvoiceRecord, ...prev]);
+      return parsed as InvoiceRecord;
     }
     setInvoices((prev) => {
       const updated = [newRecord, ...prev];
