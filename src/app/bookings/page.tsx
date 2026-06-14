@@ -121,6 +121,13 @@ export default function BookingsPage() {
   };
 
   const handleSave = async () => {
+    // [DEBUG] — remove before production release
+    console.group('[TDP] handleSave');
+    console.log('form.customer_id  :', form.customer_id || '(empty)');
+    console.log('form.customer_name:', form.customer_name || '(empty)');
+    console.log('form.sale_price   :', form.sale_price || '(empty)');
+    console.groupEnd();
+
     if (!form.customer_id) {
       setSaveError('Please select a customer from the list.');
       return;
@@ -384,8 +391,16 @@ export default function BookingsPage() {
                 <div><label className="block text-sm font-medium text-slate-700 mb-1">Date</label><input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" /></div>
               </div>
             </div>
+            {/* [DEBUG] — shows customer_id in modal so you can verify it is set */}
+            <div className="mt-2 px-3 py-1.5 bg-slate-100 rounded text-xs font-mono text-slate-500 border border-slate-200">
+              customer_id: <span className={form.customer_id ? 'text-emerald-700' : 'text-red-600 font-bold'}>
+                {form.customer_id || '(none — select a customer above)'}
+              </span>
+            </div>
+
             {saveError && (
-              <div className="mt-4 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="mt-3 px-4 py-3 bg-red-50 border-2 border-red-400 rounded-xl text-sm text-red-700 font-medium flex items-start gap-2">
+                <span className="text-red-500 text-base leading-none mt-0.5">⚠</span>
                 {saveError}
               </div>
             )}
