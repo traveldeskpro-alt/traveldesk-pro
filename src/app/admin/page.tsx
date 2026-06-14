@@ -1,52 +1,113 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useLanguage } from "@/context/LanguageContext";
-import { formatCurrency, formatDate, getInitials } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import {
-  Building2,
-  Users,
-  CreditCard,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Search,
-  ArrowUpRight,
-  TrendingUp,
-  Activity,
-  DollarSign,
-  FileText,
-  RefreshCw,
-  Lock,
-  ChevronLeft,
-  ChevronRight,
+  Building2, Users, CreditCard, Shield, CheckCircle, XCircle,
+  Search, TrendingUp, Activity, DollarSign, FileText, RefreshCw,
+  Lock, ChevronLeft, ChevronRight, AlertCircle, Edit,
 } from "lucide-react";
 
-const mockAgencies = [
-  { id: "AG-001", name: "TravelDesk Pro Demo Agency", email: "demo@traveldeskpro.app", phone: "+968 1234 5678", plan: "professional", status: "active", users: 8, bookings: 342, revenue: 85400, createdAt: "2023-01-15" },
-  { id: "AG-002", name: "Muscat Holidays", email: "hello@muscat.om", phone: "+968 8765 4321", plan: "starter", status: "active", users: 3, bookings: 98, revenue: 24100, createdAt: "2023-04-10" },
-  { id: "AG-003", name: "Desert Rose Tours", email: "contact@desertrose.om", phone: "+968 9999 0000", plan: "enterprise", status: "suspended", users: 15, bookings: 1200, revenue: 312000, createdAt: "2022-11-20" },
-  { id: "AG-004", name: "Pearl Travel", email: "book@pearl.om", phone: "+968 7777 8888", plan: "professional", status: "trial", users: 6, bookings: 210, revenue: 56700, createdAt: "2024-02-01" },
-  { id: "AG-005", name: "Oman Express", email: "support@omanexpress.om", phone: "+968 6666 5555", plan: "starter", status: "active", users: 2, bookings: 45, revenue: 11200, createdAt: "2024-05-15" },
-];
+interface AgencyRow {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  plan: string;
+  status: string;
+  created_at: string;
+  cr_number?: string;
+}
 
-const auditLogs = [
-  { id: 1, user: "System", action: "Agency AG-003 suspended", entity: "Desert Rose Tours", time: "2 hours ago", type: "warning" },
-  { id: 2, user: "Admin", action: "New plan assigned", entity: "Muscat Holidays → Professional", time: "5 hours ago", type: "success" },
-  { id: 3, user: "System", action: "Payment failed", entity: "Pearl Travel", time: "1 day ago", type: "error" },
-  { id: 4, user: "Admin", action: "Agency created", entity: "Oman Express", time: "2 days ago", type: "success" },
-  { id: 5, user: "System", action: "Backup completed", entity: "All agencies", time: "3 days ago", type: "info" },
-];
+const PLAN_COLORS: Record<string, string> = {
+  enterprise: "bg-purple-50 text-purple-700 border-purple-200",
+  professional: "bg-blue-50 text-blue-700 border-blue-200",
+  starter: "bg-slate-50 text-slate-700 border-slate-200",
+  trial: "bg-amber-50 text-amber-700 border-amber-200",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  trial: "bg-amber-50 text-amber-700 border-amber-200",
+  suspended: "bg-red-50 text-red-700 border-red-200",
+};
+
+const PLANS = ["starter", "professional", "enterprise"];
 
 export default function AdminPage() {
-  const { user } = useAuth();
-  const { t } = useLanguage();
+  const { user, agency } = useAuth();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("agencies");
+  const [agencies, setAgencies] = useState<AgencyRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
 
-  const isAdmin = user?.role === "owner" || user?.role === "admin";
+  const isAdmin = user?.role === "owner" || user?.role === "admin" || user?.role === "super_admin";
+  const isSuperAdmin = user?.role === "super_admin";
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    setLoading(true);
+    if (supabase) {
+      // Super admins can see all agencies; regular admins only see their own
+      const query = isSuperAdmin
+        ? supabase.from("agencies").select("id, name, email, phone, plan, status, created_at, cr_number").order("created_at", { ascending: false })
+        : supabase.from("agencies").select("id, name, email, phone, plan, status, created_at, cr_number").eq("id", agency?.id ?? "");
+      query.then(({ data }) => {
+        if (data) setAgencies(data as AgencyRow[]);
+        setLoading(false);
+      });
+    } else {
+      // No Supabase — show current agency only from auth context
+      if (agency) {
+        setAgencies([
+          {
+            id: agency.id,
+            name: agency.name,
+            email: agency.email,
+            phone: agency.phone,
+            plan: agency.plan,
+            status: agency.status,
+            created_at: agency.createdAt,
+            cr_number: agency.crNumber,
+          },
+        ]);
+      }
+      setLoading(false);
+    }
+  }, [isAdmin, isSuperAdmin, agency?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const setMsg = (msg: string) => {
+    setActionMsg(msg);
+    setTimeout(() => setActionMsg(null), 3000);
+  };
+
+  const handleSuspend = async (id: string) => {
+    if (!supabase) { setMsg("Supabase not configured."); return; }
+    if (!confirm("Suspend this agency? Their users will not be able to log in.")) return;
+    const { error } = await supabase.from("agencies").update({ status: "suspended" }).eq("id", id);
+    if (error) { setMsg(`Error: ${error.message}`); return; }
+    setAgencies((prev) => prev.map((a) => (a.id === id ? { ...a, status: "suspended" } : a)));
+    setMsg("Agency suspended.");
+  };
+
+  const handleActivate = async (id: string) => {
+    if (!supabase) { setMsg("Supabase not configured."); return; }
+    const { error } = await supabase.from("agencies").update({ status: "active" }).eq("id", id);
+    if (error) { setMsg(`Error: ${error.message}`); return; }
+    setAgencies((prev) => prev.map((a) => (a.id === id ? { ...a, status: "active" } : a)));
+    setMsg("Agency activated.");
+  };
+
+  const handlePlanChange = async (id: string, plan: string) => {
+    if (!supabase) { setMsg("Supabase not configured."); return; }
+    const { error } = await supabase.from("agencies").update({ plan }).eq("id", id);
+    if (error) { setMsg(`Error: ${error.message}`); return; }
+    setAgencies((prev) => prev.map((a) => (a.id === id ? { ...a, plan } : a)));
+    setMsg(`Plan updated to ${plan}.`);
+  };
 
   if (!isAdmin) {
     return (
@@ -54,58 +115,79 @@ export default function AdminPage() {
         <div className="text-center">
           <Lock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h2 className="text-lg font-bold text-navy">Access Denied</h2>
-          <p className="text-sm text-slate-500 mt-1">You don't have permission to view this page.</p>
+          <p className="text-sm text-slate-500 mt-1">You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
   }
 
-  const filtered = mockAgencies.filter((a) =>
-    a.name.toLowerCase().includes(search.toLowerCase()) ||
-    a.id.toLowerCase().includes(search.toLowerCase())
+  const filtered = agencies.filter(
+    (a) =>
+      a.name.toLowerCase().includes(search.toLowerCase()) ||
+      a.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalRevenue = filtered.reduce((a, b) => a + b.revenue, 0);
+  const totalRevenue = 0; // Requires a billing module
   const totalAgencies = filtered.length;
-  const totalUsers = filtered.reduce((a, b) => a + b.users, 0);
-  const totalBookings = filtered.reduce((a, b) => a + b.bookings, 0);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-navy">{t("saasAdmin")}</h1>
-        <p className="text-slate-500 text-sm mt-1">Manage all agencies and platform settings</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">
+            {isSuperAdmin ? "Platform Admin" : "Agency Administration"}
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            {isSuperAdmin ? "Manage all agencies on the platform" : "Manage your agency account"}
+          </p>
+        </div>
+        {!isSuperAdmin && (
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+            Agency Admin View
+          </span>
+        )}
       </div>
 
+      {actionMsg && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-brand/10 text-brand border border-brand/20 text-sm font-medium">
+          <AlertCircle className="w-4 h-4 shrink-0" /> {actionMsg}
+        </div>
+      )}
+
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center"><Building2 className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Agencies</p><p className="text-xl font-bold text-navy">{totalAgencies}</p></div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center"><Users className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Total Users</p><p className="text-xl font-bold text-navy">{totalUsers}</p></div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center"><TrendingUp className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Total Bookings</p><p className="text-xl font-bold text-navy">{totalBookings.toLocaleString()}</p></div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center"><DollarSign className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Total Revenue</p><p className="text-xl font-bold text-navy">{formatCurrency(totalRevenue, "OMR")}</p></div>
-        </div>
+        {[
+          { label: "Agencies", value: totalAgencies, icon: Building2, color: "bg-blue-50 text-blue-700" },
+          { label: "Active", value: agencies.filter((a) => a.status === "active").length, icon: CheckCircle, color: "bg-emerald-50 text-emerald-700" },
+          { label: "Trial", value: agencies.filter((a) => a.status === "trial").length, icon: Activity, color: "bg-amber-50 text-amber-700" },
+          { label: "Suspended", value: agencies.filter((a) => a.status === "suspended").length, icon: XCircle, color: "bg-red-50 text-red-700" },
+        ].map((s) => (
+          <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${s.color}`}>
+              <s.icon className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">{s.label}</p>
+              <p className="text-xl font-bold text-navy">{s.value}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
+      {/* Table card */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <button onClick={() => setActiveTab("agencies")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "agencies" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-50"}`}>
+            <button
+              onClick={() => setActiveTab("agencies")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "agencies" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-50"}`}
+            >
               Agencies
             </button>
-            <button onClick={() => setActiveTab("audit")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "audit" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-50"}`}>
-              Audit Logs
-            </button>
-            <button onClick={() => setActiveTab("plans")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "plans" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-50"}`}>
+            <button
+              onClick={() => setActiveTab("plans")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "plans" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-50"}`}
+            >
               Plans
             </button>
           </div>
@@ -114,7 +196,7 @@ export default function AdminPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search agencies..."
+              placeholder="Search agencies…"
               className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
             />
           </div>
@@ -122,116 +204,116 @@ export default function AdminPage() {
 
         {activeTab === "agencies" && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-500 text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3 text-left font-medium">Agency</th>
-                  <th className="px-4 py-3 text-left font-medium">Plan</th>
-                  <th className="px-4 py-3 text-left font-medium">Users</th>
-                  <th className="px-4 py-3 text-left font-medium">Bookings</th>
-                  <th className="px-4 py-3 text-left font-medium">Revenue</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
-                  <th className="px-4 py-3 text-left font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((a) => (
-                  <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-deep-blue text-white flex items-center justify-center text-xs font-bold">{getInitials(a.name)}</div>
-                        <div>
-                          <div className="font-medium text-slate-900">{a.name}</div>
-                          <div className="text-xs text-slate-500">{a.id} · {a.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium capitalize border ${
-                        a.plan === "enterprise" ? "bg-purple-50 text-purple-700 border-purple-200" :
-                        a.plan === "professional" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                        "bg-slate-50 text-slate-700 border-slate-200"
-                      }`}>
-                        {a.plan}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">{a.users}</td>
-                    <td className="px-4 py-3 text-slate-700">{a.bookings.toLocaleString()}</td>
-                    <td className="px-4 py-3 font-medium text-slate-900">{formatCurrency(a.revenue, "OMR")}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                        a.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                        a.status === "trial" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                        "bg-red-50 text-red-700 border-red-200"
-                      }`}>
-                        {a.status === "active" ? <CheckCircle className="w-3 h-3" /> : a.status === "suspended" ? <XCircle className="w-3 h-3" /> : <Activity className="w-3 h-3" />}
-                        {a.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <button className="p-1.5 rounded hover:bg-slate-100 text-slate-600" title="Reset"><RefreshCw className="w-4 h-4" /></button>
-                        <button className="p-1.5 rounded hover:bg-slate-100 text-slate-600" title="Edit"><FileText className="w-4 h-4" /></button>
-                        {a.status === "active" ? (
-                          <button className="p-1.5 rounded hover:bg-red-50 text-red-600" title="Suspend"><XCircle className="w-4 h-4" /></button>
-                        ) : (
-                          <button className="p-1.5 rounded hover:bg-emerald-50 text-emerald-600" title="Activate"><CheckCircle className="w-4 h-4" /></button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {activeTab === "audit" && (
-          <div className="p-4 space-y-3">
-            {auditLogs.map((log) => (
-              <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                  log.type === "warning" ? "bg-amber-50 text-amber-700" :
-                  log.type === "error" ? "bg-red-50 text-red-700" :
-                  log.type === "success" ? "bg-emerald-50 text-emerald-700" :
-                  "bg-blue-50 text-blue-700"
-                }`}>
-                  <Activity className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900">{log.action}</p>
-                  <p className="text-xs text-slate-500">{log.entity} · by {log.user}</p>
-                </div>
-                <span className="text-xs text-slate-400 shrink-0">{log.time}</span>
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="w-6 h-6 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
               </div>
-            ))}
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-500 text-xs uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left font-medium">Agency</th>
+                    <th className="px-4 py-3 text-left font-medium">Plan</th>
+                    <th className="px-4 py-3 text-left font-medium">Status</th>
+                    <th className="px-4 py-3 text-left font-medium">Created</th>
+                    {isSuperAdmin && <th className="px-4 py-3 text-left font-medium">Actions</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-slate-400">No agencies found</td>
+                    </tr>
+                  ) : (
+                    filtered.map((a) => (
+                      <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-slate-900">{a.name}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">{a.email}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {isSuperAdmin ? (
+                            <select
+                              value={a.plan}
+                              onChange={(e) => handlePlanChange(a.id, e.target.value)}
+                              className={`text-xs font-semibold px-2 py-1 rounded-full border focus:outline-none ${PLAN_COLORS[a.plan] ?? "bg-slate-50 text-slate-700 border-slate-200"}`}
+                            >
+                              {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                          ) : (
+                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border capitalize ${PLAN_COLORS[a.plan] ?? "bg-slate-50 text-slate-700 border-slate-200"}`}>
+                              {a.plan}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border capitalize ${STATUS_COLORS[a.status] ?? "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                            {a.status === "active" ? <CheckCircle className="w-3 h-3" /> : a.status === "suspended" ? <XCircle className="w-3 h-3" /> : <Activity className="w-3 h-3" />}
+                            {a.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-400">{a.created_at ? formatDate(a.created_at) : "—"}</td>
+                        {isSuperAdmin && (
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5">
+                              {a.status !== "suspended" ? (
+                                <button
+                                  onClick={() => handleSuspend(a.id)}
+                                  className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                                  title="Suspend"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleActivate(a.id)}
+                                  className="p-1.5 rounded hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors"
+                                  title="Activate"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
         {activeTab === "plans" && (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { id: "starter", name: "Starter", price: 30, users: 3, bookings: 300, color: "bg-slate-50" },
-              { id: "professional", name: "Professional", price: 40, users: 10, bookings: null, color: "bg-blue-50" },
-              { id: "enterprise", name: "Enterprise", price: 150, users: null, bookings: null, color: "bg-purple-50" },
-            ].map((plan) => (
-              <div key={plan.id} className={`rounded-xl border border-slate-200 p-5 ${plan.color}`}>
-                <h3 className="font-bold text-navy">{plan.name}</h3>
-                <p className="text-2xl font-bold text-brand mt-2">{plan.price} <span className="text-sm font-normal text-slate-500">OMR/mo</span></p>
-                <div className="mt-3 space-y-2 text-sm text-slate-700">
-                  <div className="flex items-center justify-between"><span>Users</span><span className="font-medium">{plan.users || "Unlimited"}</span></div>
-                  <div className="flex items-center justify-between"><span>Bookings</span><span className="font-medium">{plan.bookings ? `${plan.bookings}/mo` : "Unlimited"}</span></div>
+          <div className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { id: "starter", name: "Starter", price: 30, features: ["Up to 3 users", "300 bookings/mo", "Basic reports", "Invoice generation"] },
+                { id: "professional", name: "Professional", price: 40, features: ["Up to 10 users", "Unlimited bookings", "Advanced analytics", "Custom branding", "Priority support"] },
+                { id: "enterprise", name: "Enterprise", price: 150, features: ["Unlimited users", "Unlimited everything", "Dedicated support", "Custom integrations", "SLA guarantee"] },
+              ].map((plan) => (
+                <div key={plan.id} className={`rounded-xl border p-5 ${plan.id === "professional" ? "border-brand bg-brand/5" : "border-slate-200"}`}>
+                  <h3 className="font-bold text-navy">{plan.name}</h3>
+                  <p className="text-2xl font-bold text-brand mt-2">{plan.price} <span className="text-sm font-normal text-slate-500">OMR/mo</span></p>
+                  <ul className="mt-3 space-y-1.5">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className="text-xs text-slate-600 flex items-start gap-1.5">
+                        <CheckCircle className="w-3 h-3 text-brand mt-0.5 shrink-0" /> {f}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <button className="w-full mt-4 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                  Edit Plan
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
+            {!isSuperAdmin && (
+              <p className="text-xs text-slate-400 mt-4">To change your plan, contact support@traveldeskpro.app</p>
+            )}
           </div>
         )}
 
         <div className="p-4 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500">
-          <span>Showing {filtered.length} agencies</span>
+          <span>Showing {filtered.length} {filtered.length === 1 ? "agency" : "agencies"}</span>
           <div className="flex items-center gap-1">
             <button className="p-1 rounded hover:bg-slate-100"><ChevronLeft className="w-4 h-4" /></button>
             <button className="p-1 rounded hover:bg-slate-100"><ChevronRight className="w-4 h-4" /></button>
