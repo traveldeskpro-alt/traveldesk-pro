@@ -49,6 +49,18 @@ This creates all your tables: agencies, users, customers, bookings, invoices, ag
 3. Click **Save**
 Why? So when a new agency signs up, they are logged in immediately without checking their email.
 
+### Important: Set the Auth URLs to your production domain
+So password-reset, email-verification, and magic-link emails point at `https://traveldeskpro.app` (not localhost or a preview URL):
+1. In Supabase, go to left menu → **Authentication** → **URL Configuration**
+2. Set **Site URL** to: `https://traveldeskpro.app`
+3. Under **Redirect URLs**, add (one per line):
+   - `https://traveldeskpro.app/**`
+   - `https://traveldeskpro.app/reset-password`
+   - `https://traveldeskpro.app/dashboard`
+4. Click **Save**
+
+> The app sends the production domain to Supabase via the `NEXT_PUBLIC_SITE_URL` env var (added in Step 4). Supabase only honors redirect targets that are on the allow-list above, so both must agree.
+
 ---
 
 ## Step 3: Upload Your Code to GitHub (10 minutes)
@@ -80,9 +92,10 @@ Replace `YOUR_USERNAME` with your GitHub username.
 3. You will see your `traveldesk-pro` repository. Click **Import**.
 4. In the settings screen:
    - **Framework Preset**: Next.js (should be auto-selected)
-   - **Environment Variables**: Click **Add** and add these two:
+   - **Environment Variables**: Click **Add** and add these three:
      - Name: `NEXT_PUBLIC_SUPABASE_URL` → Value: paste your Supabase URL
      - Name: `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Value: paste your Supabase Anon Key
+     - Name: `NEXT_PUBLIC_SITE_URL` → Value: `https://traveldeskpro.app`
 5. Click **Deploy**
 6. Wait 2–3 minutes. Vercel will build and deploy your website.
 
