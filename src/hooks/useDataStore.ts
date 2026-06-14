@@ -743,6 +743,101 @@ export function useAgents() {
   return { agents, loading, create, update, remove, recalculateCommissions };
 }
 
+// ========== PAYMENTS ==========
+export interface PaymentRecord {
+  id: string;
+  agency_id: string;
+  invoice_id: string;
+  amount: number;
+  currency: string;
+  method: 'cash' | 'card' | 'bank_transfer' | 'online';
+  reference?: string | null;
+  notes?: string | null;
+  created_at: string;
+  // denormalized for display (not in DB)
+  invoice_number?: string;
+  customer_name?: string;
+}
+
+export function usePayments() {
+  const { user } = useAuth();
+  const { useLocalStorage } = useDataMode();
+  const agencyId = user?.agencyId || 'demo';
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      supabase
+        .from('payments')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          if (!error && data) setPayments(data as PaymentRecord[]);
+          setLoading(false);
+        });
+    } else {
+      setPayments(loadTable<PaymentRecord>(agencyId, 'payments'));
+      setLoading(false);
+    }
+    return () => { cancelled = true; };
+  }, [agencyId, useLocalStorage]);
+
+  const create = useCallback(async (data: Omit<PaymentRecord, 'id' | 'agency_id' | 'created_at'>) => {
+    const newRecord: PaymentRecord = {
+      id: crypto?.randomUUID ? crypto.randomUUID() : generateId(),
+      agency_id: agencyId,
+      ...data,
+      created_at: new Date().toISOString(),
+    };
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      const insertPayload = {
+        id: newRecord.id,
+        agency_id: newRecord.agency_id,
+        invoice_id: newRecord.invoice_id,
+        amount: newRecord.amount,
+        currency: newRecord.currency || 'OMR',
+        method: newRecord.method,
+        reference: newRecord.reference ?? null,
+        notes: newRecord.notes ?? null,
+        created_at: newRecord.created_at,
+      };
+      const { data: inserted, error } = await supabase.from('payments').insert(insertPayload).select().single();
+      if (error) {
+        console.error('[usePayments] Supabase insert error:', error.message, error.details, error.hint, error.code);
+        throw error;
+      }
+      const parsed = { ...newRecord, ...inserted } as PaymentRecord;
+      setPayments((prev) => [parsed, ...prev]);
+      return parsed;
+    }
+    setPayments((prev) => {
+      const updated = [newRecord, ...prev];
+      saveTable(agencyId, 'payments', updated);
+      return updated;
+    });
+    return newRecord;
+  }, [agencyId, useLocalStorage]);
+
+  const remove = useCallback(async (id: string) => {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      await supabase.from('payments').delete().eq('id', id);
+      setPayments((prev) => prev.filter((p) => p.id !== id));
+    } else {
+      setPayments((prev) => {
+        const updated = prev.filter((p) => p.id !== id);
+        saveTable(agencyId, 'payments', updated);
+        return updated;
+      });
+    }
+  }, [agencyId, useLocalStorage]);
+
+  return { payments, loading, create, remove };
+}
+
 // ========== ROLE-BASED ACCESS ==========
 export function usePermissions() {
   const { user } = useAuth();
