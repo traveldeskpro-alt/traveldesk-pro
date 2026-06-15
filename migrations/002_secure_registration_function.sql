@@ -26,22 +26,21 @@
 -- ---
 -- Replace direct client-side INSERTs with a single SECURITY DEFINER
 -- function (register_agency) that:
---   • Runs as postgres, bypassing RLS
---   • Creates agency + user profile in one atomic transaction
---   • Guards against duplicate registrations
---   • Validates the plan value against the allowed set
+--   - Runs as postgres, bypassing RLS
+--   - Creates agency + user profile in one atomic transaction
+--   - Guards against duplicate registrations
+--   - Validates the plan value against the allowed set
+--   - Returns the created agency and owner profile
 --
 -- After this migration, the agencies_insert and users_insert_self
 -- policies from migration 001 are dropped — direct INSERT is no
 -- longer possible from the client.
 --
--- CODE CHANGE REQUIRED
--- --------------------
--- src/context/AuthContext.ts register() must replace the two
--- direct .insert() calls with a single:
+-- CLIENT CONTRACT
+-- ---------------
+-- src/context/AuthContext.ts register() calls:
 --   await supabase.rpc('register_agency', { p_agency_name, p_email, ... })
--- This is a follow-up code change tracked separately and is NOT
--- part of this migration file.
+-- instead of direct client-side INSERTs into agencies and users.
 -- ============================================================
 
 BEGIN;
@@ -66,8 +65,9 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_uid       uuid;
-  v_agency_id uuid;
+  v_uid    uuid;
+  v_agency public.agencies%ROWTYPE;
+  v_user   public.users%ROWTYPE;
 BEGIN
   -- Must be authenticated
   v_uid := auth.uid();
@@ -99,13 +99,17 @@ BEGIN
     p_agency_name, p_email, p_phone, p_address, p_cr_number,
     p_currency, p_language, 'trial', p_plan
   )
-  RETURNING id INTO v_agency_id;
+  RETURNING * INTO v_agency;
 
   -- Create the owner profile, bound to this specific agency
   INSERT INTO public.users (id, agency_id, email, name, role, active)
-  VALUES (v_uid, v_agency_id, p_email, p_agency_name, 'owner', TRUE);
+  VALUES (v_uid, v_agency.id, p_email, p_agency_name, 'owner', TRUE)
+  RETURNING * INTO v_user;
 
-  RETURN jsonb_build_object('agency_id', v_agency_id);
+  RETURN jsonb_build_object(
+    'agency', to_jsonb(v_agency),
+    'user', to_jsonb(v_user)
+  );
 END;
 $$;
 

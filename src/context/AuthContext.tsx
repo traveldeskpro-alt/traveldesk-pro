@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { supabase } from "@/lib/supabase";
 import { siteUrl } from "@/lib/siteUrl";
@@ -117,10 +118,30 @@ function mapProfile(profile: any): { user: User; agency: Agency } | null {
   };
 }
 
+async function fetchProfile(sb: NonNullable<typeof supabase>, userId: string) {
+  const res = await sb
+    .from("users")
+    .select("*, agencies(*)")
+    .eq("id", userId)
+    .single();
+
+  if (!res.data || res.error) {
+    throw res.error || new Error("Registration completed, but the owner profile could not be loaded.");
+  }
+
+  const mapped = mapProfile(res.data);
+  if (!mapped) {
+    throw new Error("Registration completed, but the agency profile is incomplete.");
+  }
+
+  return mapped;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [agency, setAgency] = useState<Agency | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const registrationInProgress = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -169,13 +190,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // INITIAL_SESSION | SIGNED_IN | USER_UPDATED with a valid session.
         const sb = supabase!;
-        const res = await sb
-          .from("users")
-          .select("*, agencies(*)")
-          .eq("id", session.user.id)
-          .single();
-
-        if (!res.data || res.error) {
+        let mapped: { user: User; agency: Agency };
+        try {
+          mapped = await fetchProfile(sb, session.user.id);
+        } catch {
+          if (registrationInProgress.current) {
+            if (mounted) setIsLoading(false);
+            return;
+          }
           // Auth user exists but has no profile row — incomplete registration.
           // Sign out cleanly rather than leaving a half-authenticated state.
           await sb.auth.signOut();
@@ -183,7 +205,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        const mapped = mapProfile(res.data);
         if (mapped && mounted) {
           setUser(mapped.user);
           setAgency(mapped.agency);
@@ -228,57 +249,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       );
     }
     const sb = supabase;
-
-    const { data: authData, error: authError } = await sb.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: { name: form.agencyName },
-        // Email-verification links must land on the canonical production
-        // domain, never on the host that happened to issue the signup.
-        emailRedirectTo: siteUrl("/dashboard"),
-      },
-    });
-    if (authError) throw authError;
-    const uid = authData.user!.id;
-
-    const { data: agencyData, error: agencyError } = await sb
-      .from("agencies")
-      .insert({
-        name: form.agencyName,
-        email: form.email,
-        phone: form.phone,
-        cr_number: form.crNumber,
-        address: form.address,
-        currency: form.currency,
-        language: form.language,
-        status: "trial",
-        plan: form.plan,
-      })
-      .select()
-      .single();
-    if (agencyError) throw agencyError;
-
-    const { error: userError } = await sb.from("users").insert({
-      id: uid,
-      agency_id: agencyData.id,
-      email: form.email,
-      name: form.agencyName,
-      role: "owner",
-      active: true,
-    });
-    if (userError) throw userError;
-
+    registrationInProgress.current = true;
     setIsLoading(true);
-    const { error: signInError } = await sb.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
-    if (signInError) {
+
+    try {
+      const { data: authData, error: authError } = await sb.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: { name: form.agencyName },
+          // Email-verification links must land on the canonical production
+          // domain, never on the host that happened to issue the signup.
+          emailRedirectTo: siteUrl("/dashboard"),
+        },
+      });
+      if (authError) throw authError;
+      const uid = authData.user?.id;
+      if (!uid) throw new Error("Registration failed before creating the auth user.");
+
+      if (!authData.session) {
+        const { error: signInError } = await sb.auth.signInWithPassword({
+          email: form.email,
+          password: form.password,
+        });
+        if (signInError) throw signInError;
+      }
+
+      const { error: registrationError } = await sb.rpc("register_agency", {
+        p_agency_name: form.agencyName,
+        p_email: form.email,
+        p_phone: form.phone,
+        p_address: form.address || "",
+        p_cr_number: form.crNumber || "",
+        p_currency: form.currency || "OMR",
+        p_language: form.language || "en",
+        p_plan: form.plan || "starter",
+      });
+      if (registrationError) throw registrationError;
+
+      const mapped = await fetchProfile(sb, uid);
+      setUser(mapped.user);
+      setAgency(mapped.agency);
+      setAuthCookie();
       setIsLoading(false);
-      throw signInError;
+    } catch (err) {
+      await sb.auth.signOut();
+      setIsLoading(false);
+      throw err;
+    } finally {
+      registrationInProgress.current = false;
     }
-    // State update handled by onAuthStateChange SIGNED_IN.
   }, []);
 
   const requestPasswordReset = useCallback(async (email: string) => {
