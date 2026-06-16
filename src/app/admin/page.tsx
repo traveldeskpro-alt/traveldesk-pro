@@ -20,6 +20,7 @@ import {
   Edit3,
   Trash2,
   Save,
+  MoreVertical,
 } from "lucide-react";
 
 type PlanId = "starter" | "professional" | "enterprise";
@@ -58,6 +59,7 @@ type ModalState =
   | { type: "view"; agency: AgencyRow }
   | { type: "edit"; agency: AgencyRow }
   | { type: "changePlan"; agency: AgencyRow }
+  | { type: "confirmStatus"; agency: AgencyRow; status: "suspended" }
   | { type: "delete"; agency: AgencyRow }
   | { type: "editPlan"; plan: PlanRow }
   | null;
@@ -94,6 +96,7 @@ export default function AdminPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [openMenuAgencyId, setOpenMenuAgencyId] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
   const [agencyForm, setAgencyForm] = useState({
     name: "",
@@ -209,6 +212,20 @@ export default function AdminPage() {
     setActionError(null);
   };
 
+  const openModal = (nextModal: ModalState) => {
+    setOpenMenuAgencyId(null);
+    setActionError(null);
+    setModal(nextModal);
+  };
+
+  const getActionErrorMessage = (err: unknown) => {
+    if (err instanceof Error) return err.message;
+    if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
+      return err.message;
+    }
+    return "Admin action failed.";
+  };
+
   const runAdminAction = async (action: () => Promise<void>, success: string) => {
     setActionError(null);
     setActionMessage(null);
@@ -225,7 +242,7 @@ export default function AdminPage() {
       setTimeout(() => setActionMessage(null), 2500);
       closeModal();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Admin action failed.");
+      setActionError(getActionErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -238,12 +255,12 @@ export default function AdminPage() {
       phone: selected.phone || "",
       status: selected.status,
     });
-    setModal({ type: "edit", agency: selected });
+    openModal({ type: "edit", agency: selected });
   };
 
   const openChangePlan = (selected: AgencyRow) => {
     setAgencyPlan(selected.plan);
-    setModal({ type: "changePlan", agency: selected });
+    openModal({ type: "changePlan", agency: selected });
   };
 
   const openEditPlan = (selected: PlanRow) => {
@@ -254,7 +271,7 @@ export default function AdminPage() {
       bookingLimit: selected.booking_limit === null ? "" : String(selected.booking_limit),
       features: selected.features.join("\n"),
     });
-    setModal({ type: "editPlan", plan: selected });
+    openModal({ type: "editPlan", plan: selected });
   };
 
   const parseLimit = (value: string) => {
@@ -295,6 +312,7 @@ export default function AdminPage() {
   };
 
   const updateAgencyStatus = async (selected: AgencyRow, status: "active" | "suspended") => {
+    setOpenMenuAgencyId(null);
     await runAdminAction(async () => {
       const rpcName = status === "active" ? "saas_admin_activate_agency" : "saas_admin_suspend_agency";
       const { error } = await supabase!.rpc(rpcName, {
@@ -399,7 +417,7 @@ export default function AdminPage() {
         )}
 
         {activeTab === "agencies" && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto pb-20">
             {loadError && (
               <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 Could not load agencies: {loadError}
@@ -450,25 +468,41 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap justify-end gap-1.5">
-                        <button onClick={() => setModal({ type: "view", agency: a })} className="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50">
-                          View
+                      <div className="relative flex justify-end">
+                        <button
+                          type="button"
+                          aria-label={`Open actions for ${a.name}`}
+                          onClick={() => setOpenMenuAgencyId((current) => current === a.id ? null : a.id)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-800"
+                        >
+                          <MoreVertical className="h-4 w-4" />
                         </button>
-                        <button onClick={() => openEditAgency(a)} className="px-2.5 py-1 rounded-md border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50">
-                          Edit
-                        </button>
-                        <button disabled={actionLoading || a.status === "suspended"} onClick={() => updateAgencyStatus(a, "suspended")} className="px-2.5 py-1 rounded-md border border-amber-200 bg-amber-50 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50">
-                          Suspend
-                        </button>
-                        <button disabled={actionLoading || a.status === "active"} onClick={() => updateAgencyStatus(a, "active")} className="px-2.5 py-1 rounded-md border border-emerald-200 bg-emerald-50 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
-                          Activate
-                        </button>
-                        <button onClick={() => openChangePlan(a)} className="px-2.5 py-1 rounded-md border border-blue-200 bg-blue-50 text-xs font-medium text-blue-700 hover:bg-blue-100">
-                          Change Plan
-                        </button>
-                        <button onClick={() => setModal({ type: "delete", agency: a })} className="px-2.5 py-1 rounded-md border border-red-200 bg-red-50 text-xs font-medium text-red-700 hover:bg-red-100">
-                          Delete
-                        </button>
+                        {openMenuAgencyId === a.id && (
+                          <div className="absolute right-0 top-9 z-30 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                            <button onClick={() => openModal({ type: "view", agency: a })} className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                              View
+                            </button>
+                            <button onClick={() => openEditAgency(a)} className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                              Edit
+                            </button>
+                            <button onClick={() => openChangePlan(a)} className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                              Change Plan
+                            </button>
+                            {a.status === "suspended" ? (
+                              <button disabled={actionLoading} onClick={() => updateAgencyStatus(a, "active")} className="block w-full px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">
+                                Activate
+                              </button>
+                            ) : (
+                              <button disabled={actionLoading} onClick={() => openModal({ type: "confirmStatus", agency: a, status: "suspended" })} className="block w-full px-3 py-2 text-left text-sm text-amber-700 hover:bg-amber-50 disabled:opacity-50">
+                                Suspend
+                              </button>
+                            )}
+                            <div className="my-1 border-t border-slate-100" />
+                            <button onClick={() => openModal({ type: "delete", agency: a })} className="block w-full px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50">
+                              Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -646,6 +680,27 @@ export default function AdminPage() {
                   <button onClick={closeModal} className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
                   <button onClick={changePlan} disabled={actionLoading} className="px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-deep-blue disabled:opacity-50">
                     {actionLoading ? "Saving..." : "Change Plan"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {modal.type === "confirmStatus" && (
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <XCircle className="w-5 h-5 text-amber-600" />
+                  <h2 className="font-bold text-navy">Suspend Agency</h2>
+                </div>
+                <p className="text-sm text-slate-600">
+                  Suspend {modal.agency.name}? This sets the agency to suspended and deactivates its users.
+                </p>
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  Agency users will lose access until the agency is activated again.
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                  <button onClick={closeModal} className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
+                  <button onClick={() => updateAgencyStatus(modal.agency, modal.status)} disabled={actionLoading} className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50">
+                    {actionLoading ? "Suspending..." : "Suspend Agency"}
                   </button>
                 </div>
               </div>
