@@ -384,6 +384,18 @@ BEGIN
     RAISE EXCEPTION 'Agency not found' USING ERRCODE = 'P0002';
   END IF;
 
+  IF p_status = 'suspended' THEN
+    UPDATE public.users
+    SET active = false
+    WHERE agency_id = p_agency_id
+      AND role <> 'super_admin';
+  ELSIF p_status = 'active' THEN
+    UPDATE public.users
+    SET active = true
+    WHERE agency_id = p_agency_id
+      AND role <> 'super_admin';
+  END IF;
+
   RETURN v_agency;
 END;
 $$;
