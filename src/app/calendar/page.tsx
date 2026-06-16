@@ -1,19 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
-import { ChevronLeft, ChevronRight, Plus, CalendarDays, Clock, Plane, FileCheck, Hotel, Users } from "lucide-react";
+import { useBookings } from "@/hooks/useDataStore";
+import { ChevronLeft, ChevronRight, CalendarDays, Clock, Plane, FileCheck, Hotel, Users } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay } from "date-fns";
 import { enUS, arSA } from "date-fns/locale";
-
-const events = [
-  { date: new Date(2024, 5, 10), title: "Flight to London", type: "air_ticket", customer: "Ahmed Hassan", time: "14:00" },
-  { date: new Date(2024, 5, 12), title: "Visa Appointment", type: "visa", customer: "Fatima Al-Balushi", time: "09:30" },
-  { date: new Date(2024, 5, 15), title: "Check-in Grand Hyatt", type: "hotel", customer: "Khalid Al-Busaidi", time: "15:00" },
-  { date: new Date(2024, 5, 20), title: "Europe Tour Departure", type: "group_tour", customer: "Mariam Al-Riyami", time: "08:00" },
-  { date: new Date(2024, 5, 22), title: "Flight to Dubai", type: "air_ticket", customer: "Said Al-Maamari", time: "16:45" },
-  { date: new Date(2024, 5, 25), title: "Schengen Interview", type: "visa", customer: "Nawal Al-Harthy", time: "11:00" },
-];
 
 const typeStyles = {
   air_ticket: { icon: Plane, color: "bg-blue-50 text-blue-700 border-blue-200" },
@@ -22,11 +14,59 @@ const typeStyles = {
   group_tour: { icon: Users, color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
 };
 
+function safeDate(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export default function CalendarPage() {
   const { t, language } = useLanguage();
-  const [currentMonth, setCurrentMonth] = useState(new Date(2024, 5, 1));
+  const { bookings, loading } = useBookings();
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(today);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const locale = language === "ar" ? arSA : enUS;
+
+  const events = useMemo(() => {
+    return bookings.flatMap((booking) => {
+      const createdAt = safeDate(booking.created_at);
+      const checkIn = safeDate(booking.check_in);
+      const checkOut = safeDate(booking.check_out);
+      const baseTitle = booking.details || booking.tour_name || booking.hotel_name || booking.type.replace("_", " ");
+      const bookingEvents = [];
+
+      if (createdAt) {
+        bookingEvents.push({
+          date: createdAt,
+          title: baseTitle,
+          type: booking.type,
+          customer: booking.customer_name,
+          time: format(createdAt, "HH:mm"),
+        });
+      }
+      if (checkIn) {
+        bookingEvents.push({
+          date: checkIn,
+          title: booking.hotel_name ? `Check-in ${booking.hotel_name}` : "Check-in",
+          type: "hotel" as const,
+          customer: booking.customer_name,
+          time: format(checkIn, "HH:mm"),
+        });
+      }
+      if (checkOut) {
+        bookingEvents.push({
+          date: checkOut,
+          title: booking.hotel_name ? `Check-out ${booking.hotel_name}` : "Check-out",
+          type: "hotel" as const,
+          customer: booking.customer_name,
+          time: format(checkOut, "HH:mm"),
+        });
+      }
+
+      return bookingEvents;
+    });
+  }, [bookings]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -48,12 +88,13 @@ export default function CalendarPage() {
           <h1 className="text-2xl font-bold text-navy">{t("calendar")}</h1>
           <p className="text-slate-500 text-sm mt-1">Schedule and upcoming events</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand hover:bg-deep-blue text-white text-sm font-medium transition-colors">
-            <Plus className="w-4 h-4" /> New Event
-          </button>
-        </div>
       </div>
+
+      {!loading && events.length === 0 && (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">
+          No calendar events yet. Create bookings to populate this calendar with tenant data.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
@@ -66,7 +107,7 @@ export default function CalendarPage() {
               <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600">
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <button onClick={() => setCurrentMonth(new Date(2024, 5, 1))} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
+              <button onClick={() => setCurrentMonth(new Date())} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
                 Today
               </button>
               <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600">
@@ -154,7 +195,7 @@ export default function CalendarPage() {
           <div className="mt-6 pt-4 border-t border-slate-100">
             <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Upcoming</h4>
             <div className="space-y-3">
-              {events.filter((e) => e.date >= new Date(2024, 5, 10)).slice(0, 4).map((e, i) => {
+              {events.filter((e) => e.date >= today).slice(0, 4).map((e, i) => {
                 const style = typeStyles[e.type as keyof typeof typeStyles] || typeStyles.air_ticket;
                 const Icon = style.icon;
                 return (
@@ -169,6 +210,9 @@ export default function CalendarPage() {
                   </div>
                 );
               })}
+              {events.filter((e) => e.date >= today).length === 0 && (
+                <div className="text-sm text-slate-500 py-4">No upcoming events.</div>
+              )}
             </div>
           </div>
         </div>

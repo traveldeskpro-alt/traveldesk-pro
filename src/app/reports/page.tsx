@@ -1,8 +1,11 @@
 "use client";
 
+import React, { useMemo, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
-import { formatCurrency } from "@/lib/utils";
+import { useAgents, useBookings, useInvoices } from "@/hooks/useDataStore";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { Download, BarChart3, Calendar, TrendingUp, CreditCard, AlertTriangle, FileText, Users } from "lucide-react";
+import { Document, Page, StyleSheet, Text, View, pdf } from "@react-pdf/renderer";
 import {
   BarChart,
   Bar,
@@ -16,35 +19,215 @@ import {
   Legend,
 } from "recharts";
 
-const dailyData = [
-  { day: "Mon", sales: 1200, profit: 320 },
-  { day: "Tue", sales: 1800, profit: 480 },
-  { day: "Wed", sales: 900, profit: 210 },
-  { day: "Thu", sales: 2100, profit: 620 },
-  { day: "Fri", sales: 1600, profit: 410 },
-  { day: "Sat", sales: 2400, profit: 780 },
-  { day: "Sun", sales: 1100, profit: 290 },
-];
+const reportPdfStyles = StyleSheet.create({
+  page: { padding: 32, fontSize: 10, color: "#0f172a" },
+  title: { fontSize: 18, marginBottom: 6, fontWeight: 700 },
+  subtitle: { fontSize: 10, color: "#64748b", marginBottom: 18 },
+  section: { marginTop: 16 },
+  heading: { fontSize: 13, marginBottom: 8, fontWeight: 700 },
+  row: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#e2e8f0", paddingVertical: 6 },
+  cell: { flex: 1 },
+  label: { color: "#64748b" },
+});
 
-const monthlyData = [
-  { month: "Jan", revenue: 42000, cost: 31000, profit: 11000 },
-  { month: "Feb", revenue: 58000, cost: 41000, profit: 17000 },
-  { month: "Mar", revenue: 39000, cost: 28000, profit: 11000 },
-  { month: "Apr", revenue: 72000, cost: 51000, profit: 21000 },
-  { month: "May", revenue: 61000, cost: 43000, profit: 18000 },
-  { month: "Jun", revenue: 85000, cost: 59000, profit: 26000 },
-];
+type ReportSummary = {
+  totalSales: number;
+  totalProfit: number;
+  pendingAmount: number;
+  agentCount: number;
+};
 
-const agentPerformance = [
-  { agent: "Omar", bookings: 34, sales: 12400, commission: 620 },
-  { agent: "Aisha", bookings: 28, sales: 9800, commission: 490 },
-  { agent: "Khalid", bookings: 22, sales: 8500, commission: 425 },
-  { agent: "Sara", bookings: 12, sales: 4200, commission: 252 },
-];
+function safeDate(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function downloadFile(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value: string | number) {
+  return `"${String(value).replaceAll('"', '""')}"`;
+}
+
+function ReportPdfDocument({
+  summary,
+  agentPerformance,
+  pendingInvoices,
+  currency,
+}: {
+  summary: ReportSummary;
+  agentPerformance: Array<{ agent: string; bookings: number; sales: number; commission: number }>;
+  pendingInvoices: Array<{ invoice_number: string; customer_name: string; total: number; due_date: string }>;
+  currency: string;
+}) {
+  return (
+    <Document>
+      <Page size="A4" style={reportPdfStyles.page}>
+        <Text style={reportPdfStyles.title}>Reports</Text>
+        <Text style={reportPdfStyles.subtitle}>Real tenant data exported from TravelDesk Pro</Text>
+
+        <View style={reportPdfStyles.section}>
+          <Text style={reportPdfStyles.heading}>Summary</Text>
+          <View style={reportPdfStyles.row}><Text style={reportPdfStyles.cell}>Sales</Text><Text style={reportPdfStyles.cell}>{formatCurrency(summary.totalSales, currency)}</Text></View>
+          <View style={reportPdfStyles.row}><Text style={reportPdfStyles.cell}>Profit</Text><Text style={reportPdfStyles.cell}>{formatCurrency(summary.totalProfit, currency)}</Text></View>
+          <View style={reportPdfStyles.row}><Text style={reportPdfStyles.cell}>Pending</Text><Text style={reportPdfStyles.cell}>{formatCurrency(summary.pendingAmount, currency)}</Text></View>
+          <View style={reportPdfStyles.row}><Text style={reportPdfStyles.cell}>Agents</Text><Text style={reportPdfStyles.cell}>{summary.agentCount}</Text></View>
+        </View>
+
+        <View style={reportPdfStyles.section}>
+          <Text style={reportPdfStyles.heading}>Agent Performance</Text>
+          {agentPerformance.length === 0 ? (
+            <Text style={reportPdfStyles.label}>No agent data.</Text>
+          ) : agentPerformance.map((a) => (
+            <View key={a.agent} style={reportPdfStyles.row}>
+              <Text style={reportPdfStyles.cell}>{a.agent}</Text>
+              <Text style={reportPdfStyles.cell}>{a.bookings} bookings</Text>
+              <Text style={reportPdfStyles.cell}>{formatCurrency(a.sales, currency)}</Text>
+              <Text style={reportPdfStyles.cell}>{formatCurrency(a.commission, currency)}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={reportPdfStyles.section}>
+          <Text style={reportPdfStyles.heading}>Pending Payments</Text>
+          {pendingInvoices.length === 0 ? (
+            <Text style={reportPdfStyles.label}>No pending invoices.</Text>
+          ) : pendingInvoices.map((invoice) => (
+            <View key={invoice.invoice_number} style={reportPdfStyles.row}>
+              <Text style={reportPdfStyles.cell}>{invoice.invoice_number}</Text>
+              <Text style={reportPdfStyles.cell}>{invoice.customer_name}</Text>
+              <Text style={reportPdfStyles.cell}>{formatCurrency(invoice.total, currency)}</Text>
+              <Text style={reportPdfStyles.cell}>{formatDate(invoice.due_date)}</Text>
+            </View>
+          ))}
+        </View>
+      </Page>
+    </Document>
+  );
+}
 
 export default function ReportsPage() {
   const { t } = useLanguage();
+  const { bookings } = useBookings();
+  const { invoices } = useInvoices();
+  const { agents } = useAgents();
+  const [exportingPdf, setExportingPdf] = useState(false);
   const currency = "OMR";
+  const now = new Date();
+
+  const dailyData = useMemo(() => {
+    return Array.from({ length: 7 }).map((_, index) => {
+      const day = new Date(now);
+      day.setDate(now.getDate() - (6 - index));
+      const dayBookings = bookings.filter((booking) => {
+        const bookingDate = safeDate(booking.created_at);
+        return bookingDate?.toDateString() === day.toDateString();
+      });
+      const sales = dayBookings.reduce((sum, booking) => sum + booking.sale_price, 0);
+      const cost = dayBookings.reduce((sum, booking) => sum + booking.cost_price, 0);
+      return {
+        day: day.toLocaleDateString("en", { weekday: "short" }),
+        sales,
+        profit: sales - cost,
+      };
+    });
+  }, [bookings]);
+
+  const monthlyData = useMemo(() => {
+    return Array.from({ length: now.getMonth() + 1 }).map((_, month) => {
+      const monthBookings = bookings.filter((booking) => {
+        const bookingDate = safeDate(booking.created_at);
+        return bookingDate?.getFullYear() === now.getFullYear() && bookingDate.getMonth() === month;
+      });
+      const revenue = monthBookings.reduce((sum, booking) => sum + booking.sale_price, 0);
+      const cost = monthBookings.reduce((sum, booking) => sum + booking.cost_price, 0);
+      return {
+        month: new Date(now.getFullYear(), month, 1).toLocaleDateString("en", { month: "short" }),
+        revenue,
+        cost,
+        profit: revenue - cost,
+      };
+    });
+  }, [bookings]);
+
+  const agentPerformance = useMemo(() => {
+    return agents.map((agent) => {
+      const agentBookings = bookings.filter((booking) => booking.agent_id === agent.id);
+      const sales = agentBookings.reduce((sum, booking) => sum + booking.sale_price, 0);
+      return {
+        agent: agent.name,
+        bookings: agentBookings.length,
+        sales,
+        commission: agentBookings.reduce((sum, booking) => sum + (booking.sale_price * agent.commission_rate) / 100, 0),
+      };
+    });
+  }, [agents, bookings]);
+
+  const pendingInvoices = useMemo(() => {
+    return invoices
+      .filter((invoice) => invoice.status === "pending" || invoice.status === "overdue")
+      .sort((a, b) => (safeDate(a.due_date)?.getTime() || 0) - (safeDate(b.due_date)?.getTime() || 0));
+  }, [invoices]);
+
+  const summary = useMemo<ReportSummary>(() => {
+    const totalSales = bookings.reduce((sum, booking) => sum + booking.sale_price, 0);
+    const totalCost = bookings.reduce((sum, booking) => sum + booking.cost_price, 0);
+    return {
+      totalSales,
+      totalProfit: totalSales - totalCost,
+      pendingAmount: pendingInvoices.reduce((sum, invoice) => sum + invoice.total, 0),
+      agentCount: agents.length,
+    };
+  }, [agents.length, bookings, pendingInvoices]);
+
+  const hasReportData = bookings.length > 0 || invoices.length > 0 || agents.length > 0;
+  const exportDisabledTitle = "Exports are disabled until this tenant has report data.";
+
+  const exportCsv = () => {
+    const rows = [
+      ["Section", "Name", "Bookings", "Sales", "Commission", "Amount", "Due Date"],
+      ...agentPerformance.map((a) => ["Agent Performance", a.agent, a.bookings, a.sales, a.commission, "", ""]),
+      ...pendingInvoices.map((invoice) => ["Pending Payment", invoice.invoice_number, "", "", "", invoice.total, invoice.due_date]),
+    ];
+    const csv = rows.map((row) => row.map((cell) => csvCell(cell)).join(",")).join("\n");
+    downloadFile(new Blob([csv], { type: "text/csv;charset=utf-8" }), "reports.csv");
+  };
+
+  const exportExcel = () => {
+    const tableRows = [
+      ["Type", "Name", "Bookings", "Sales", "Commission", "Amount", "Due Date"],
+      ...agentPerformance.map((a) => ["Agent Performance", a.agent, a.bookings, a.sales, a.commission, "", ""]),
+      ...pendingInvoices.map((invoice) => ["Pending Payment", invoice.invoice_number, "", "", "", invoice.total, formatDate(invoice.due_date)]),
+    ];
+    const html = `<table>${tableRows.map((row) => `<tr>${row.map((cell) => `<td>${String(cell)}</td>`).join("")}</tr>`).join("")}</table>`;
+    downloadFile(new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" }), "reports.xls");
+  };
+
+  const exportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const blob = await pdf(
+        <ReportPdfDocument
+          summary={summary}
+          agentPerformance={agentPerformance}
+          pendingInvoices={pendingInvoices}
+          currency={currency}
+        />
+      ).toBlob();
+      downloadFile(blob, "reports.pdf");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -54,11 +237,14 @@ export default function ReportsPage() {
           <p className="text-slate-500 text-sm mt-1">Analytics and insights</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-            <Download className="w-4 h-4" /> {t("exportExcel")}
+          <button onClick={exportExcel} disabled={!hasReportData} title={!hasReportData ? exportDisabledTitle : "Download Excel file"} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <Download className="w-4 h-4" /> Export Excel
           </button>
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-            <Download className="w-4 h-4" /> {t("exportPDF")}
+          <button onClick={exportPdf} disabled={!hasReportData || exportingPdf} title={!hasReportData ? exportDisabledTitle : "Download PDF file"} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <Download className="w-4 h-4" /> {exportingPdf ? "Exporting PDF..." : "Export PDF"}
+          </button>
+          <button onClick={exportCsv} disabled={!hasReportData} title={!hasReportData ? exportDisabledTitle : "Download CSV file"} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <Download className="w-4 h-4" /> Export CSV
           </button>
         </div>
       </div>
@@ -68,28 +254,28 @@ export default function ReportsPage() {
           <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center"><BarChart3 className="w-6 h-6" /></div>
           <div>
             <p className="text-sm text-slate-500">{t("dailySales")}</p>
-            <p className="text-xl font-bold text-navy">{formatCurrency(11100, currency)}</p>
+            <p className="text-xl font-bold text-navy">{formatCurrency(summary.totalSales, currency)}</p>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center"><TrendingUp className="w-6 h-6" /></div>
           <div>
             <p className="text-sm text-slate-500">{t("profitLoss")}</p>
-            <p className="text-xl font-bold text-navy">{formatCurrency(3110, currency)}</p>
+            <p className="text-xl font-bold text-navy">{formatCurrency(summary.totalProfit, currency)}</p>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center"><CreditCard className="w-6 h-6" /></div>
           <div>
             <p className="text-sm text-slate-500">{t("pending")}</p>
-            <p className="text-xl font-bold text-navy">{formatCurrency(12400, currency)}</p>
+            <p className="text-xl font-bold text-navy">{formatCurrency(summary.pendingAmount, currency)}</p>
           </div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center"><Users className="w-6 h-6" /></div>
           <div>
             <p className="text-sm text-slate-500">{t("agentPerformance")}</p>
-            <p className="text-xl font-bold text-navy">{agentPerformance.length} agents</p>
+            <p className="text-xl font-bold text-navy">{summary.agentCount} agents</p>
           </div>
         </div>
       </div>
@@ -115,7 +301,7 @@ export default function ReportsPage() {
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-navy flex items-center gap-2"><FileText className="w-4 h-4" /> {t("monthlyReport")}</h3>
-            <span className="text-xs text-slate-500">YTD 2024</span>
+            <span className="text-xs text-slate-500">YTD {now.getFullYear()}</span>
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={monthlyData}>
@@ -149,8 +335,8 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {agentPerformance.map((a, i) => (
-                <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+              {agentPerformance.map((a) => (
+                <tr key={a.agent} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                   <td className="px-5 py-3 font-medium text-slate-900">{a.agent}</td>
                   <td className="px-5 py-3 text-slate-900">{a.bookings}</td>
                   <td className="px-5 py-3 font-medium text-slate-900">{formatCurrency(a.sales, currency)}</td>
@@ -162,6 +348,11 @@ export default function ReportsPage() {
                   </td>
                 </tr>
               ))}
+              {agentPerformance.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-sm text-slate-500">No agent performance data yet.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -184,20 +375,24 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-slate-50 hover:bg-slate-50">
-                <td className="px-5 py-3 font-medium text-slate-900">INV-1026</td>
-                <td className="px-5 py-3 text-slate-900">Khalid Al-Busaidi</td>
-                <td className="px-5 py-3 font-medium text-amber-600">{formatCurrency(480, currency)}</td>
-                <td className="px-5 py-3 text-slate-500">2024-06-13</td>
-                <td className="px-5 py-3 text-red-600 font-medium">3 days</td>
-              </tr>
-              <tr className="border-b border-slate-50 hover:bg-slate-50">
-                <td className="px-5 py-3 font-medium text-slate-900">INV-1027</td>
-                <td className="px-5 py-3 text-slate-900">Mariam Al-Riyami</td>
-                <td className="px-5 py-3 font-medium text-amber-600">{formatCurrency(1500, currency)}</td>
-                <td className="px-5 py-3 text-slate-500">2024-06-12</td>
-                <td className="px-5 py-3 text-red-600 font-medium">4 days</td>
-              </tr>
+              {pendingInvoices.map((invoice) => {
+                const dueDate = safeDate(invoice.due_date);
+                const daysOverdue = dueDate ? Math.max(0, Math.floor((now.getTime() - dueDate.getTime()) / 86400000)) : 0;
+                return (
+                  <tr key={invoice.id} className="border-b border-slate-50 hover:bg-slate-50">
+                    <td className="px-5 py-3 font-medium text-slate-900">{invoice.invoice_number}</td>
+                    <td className="px-5 py-3 text-slate-900">{invoice.customer_name}</td>
+                    <td className="px-5 py-3 font-medium text-amber-600">{formatCurrency(invoice.total, currency)}</td>
+                    <td className="px-5 py-3 text-slate-500">{formatDate(invoice.due_date)}</td>
+                    <td className="px-5 py-3 text-red-600 font-medium">{daysOverdue > 0 ? `${daysOverdue} days` : "Not overdue"}</td>
+                  </tr>
+                );
+              })}
+              {pendingInvoices.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-sm text-slate-500">No pending invoices.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

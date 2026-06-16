@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { CURRENCIES, SUBSCRIPTION_PLANS, ROLES } from "@/lib/constants";
+import { supabase } from "@/lib/supabase";
+import { CURRENCIES, SUBSCRIPTION_PLANS } from "@/lib/constants";
 import {
   Building2,
   Users,
@@ -37,22 +38,109 @@ const tabs = [
   { id: "appearance", label: "Appearance", icon: Palette },
 ];
 
-const mockUsers = [
-  { id: "U-1", name: "Ahmed Al-Rashdi", email: "ahmed@agency.com", role: "owner", isActive: true },
-  { id: "U-2", name: "Fatima Al-Balushi", email: "fatima@agency.com", role: "manager", isActive: true },
-  { id: "U-3", name: "Omar Al-Siyabi", email: "omar@agency.com", role: "agent", isActive: true },
-  { id: "U-4", name: "Sara Al-Habsi", email: "sara@agency.com", role: "accountant", isActive: false },
-];
+type SettingsUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  active: boolean;
+};
 
 export default function SettingsPage() {
-  const { user, agency } = useAuth();
+  const { user, agency, refreshProfile } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState("general");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [users, setUsers] = useState<SettingsUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [profileForm, setProfileForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    crNumber: "",
+    currency: "OMR",
+    language: "en" as "en" | "ar",
+  });
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    if (!agency) return;
+    setProfileForm({
+      name: agency.name || "",
+      email: agency.email || "",
+      phone: agency.phone || "",
+      address: agency.address || "",
+      crNumber: agency.crNumber || "",
+      currency: agency.currency || "OMR",
+      language: (agency.language as "en" | "ar") || "en",
+    });
+  }, [agency]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadUsers() {
+      if (!user?.agencyId || !supabase) {
+        setUsers([]);
+        setUsersLoading(false);
+        return;
+      }
+      setUsersLoading(true);
+      const { data } = await supabase
+        .from("users")
+        .select("id,name,email,role,active")
+        .eq("agency_id", user.agencyId)
+        .order("created_at", { ascending: true });
+      if (!cancelled) {
+        setUsers((data || []) as SettingsUser[]);
+        setUsersLoading(false);
+      }
+    }
+    loadUsers();
+    return () => { cancelled = true; };
+  }, [user?.agencyId]);
+
+  const handleSave = async () => {
+    setSaveError(null);
+    setSaved(false);
+    if (!agency?.id) {
+      setSaveError("Agency profile is not loaded.");
+      return;
+    }
+    if (!supabase) {
+      setSaveError("Settings persistence is unavailable because Supabase is not configured.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("agencies")
+        .update({
+          name: profileForm.name.trim(),
+          email: profileForm.email.trim(),
+          phone: profileForm.phone.trim(),
+          address: profileForm.address.trim() || null,
+          cr_number: profileForm.crNumber.trim() || null,
+          currency: profileForm.currency,
+          language: profileForm.language,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", agency.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setLanguage(profileForm.language);
+      await refreshProfile();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save agency profile.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -102,39 +190,39 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t("agencyName")}</label>
-                  <input defaultValue={agency?.name || "Demo Travel Agency"} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  <input value={profileForm.name} onChange={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t("email")}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input defaultValue={agency?.email || "demo@traveldeskpro.app"} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                    <input value={profileForm.email} onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t("phone")}</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input defaultValue={agency?.phone || "+968 1234 5678"} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                    <input value={profileForm.phone} onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t("address")}</label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input defaultValue={agency?.address || "Muscat, Oman"} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                    <input value={profileForm.address} onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t("crNumber")}</label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input defaultValue={agency?.crNumber || "CR-123456"} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                    <input value={profileForm.crNumber} onChange={(e) => setProfileForm((prev) => ({ ...prev, crNumber: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t("currency")}</label>
-                  <select defaultValue={agency?.currency || "OMR"} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
+                  <select value={profileForm.currency} onChange={(e) => setProfileForm((prev) => ({ ...prev, currency: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
                     {CURRENCIES.map((c) => (
                       <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
                     ))}
@@ -143,8 +231,12 @@ export default function SettingsPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t("language")}</label>
                   <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value as "en" | "ar")}
+                    value={profileForm.language}
+                    onChange={(e) => {
+                      const nextLanguage = e.target.value as "en" | "ar";
+                      setProfileForm((prev) => ({ ...prev, language: nextLanguage }));
+                      setLanguage(nextLanguage);
+                    }}
                     className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   >
                     <option value="en">English</option>
@@ -157,11 +249,16 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                   <MessageCircle className="w-4 h-4" /> WhatsApp Business Settings
                 </div>
-                <button onClick={handleSave} className="px-4 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                  {saved ? "Saved" : t("save")}
+                  {saving ? "Saving..." : saved ? "Saved" : t("save")}
                 </button>
               </div>
+              {saveError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {saveError}
+                </div>
+              )}
             </div>
           )}
 
@@ -184,7 +281,7 @@ export default function SettingsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {mockUsers.map((u) => (
+                    {users.map((u) => (
                       <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50">
                         <td className="px-3 py-3 font-medium text-slate-900">{u.name}</td>
                         <td className="px-3 py-3 text-slate-600">{u.email}</td>
@@ -192,8 +289,8 @@ export default function SettingsPage() {
                           <span className="capitalize text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">{u.role}</span>
                         </td>
                         <td className="px-3 py-3">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${u.isActive ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}`}>
-                            {u.isActive ? "Active" : "Inactive"}
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${u.active ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                            {u.active ? "Active" : "Inactive"}
                           </span>
                         </td>
                         <td className="px-3 py-3">
@@ -201,6 +298,16 @@ export default function SettingsPage() {
                         </td>
                       </tr>
                     ))}
+                    {!usersLoading && users.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">No users found for this agency.</td>
+                      </tr>
+                    )}
+                    {usersLoading && (
+                      <tr>
+                        <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">Loading users...</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

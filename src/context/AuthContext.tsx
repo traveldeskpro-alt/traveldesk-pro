@@ -60,6 +60,7 @@ export interface AuthContextType {
   logout: () => void;
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -72,6 +73,7 @@ export const AuthContext = createContext<AuthContextType>({
   logout: () => {},
   requestPasswordReset: async () => {},
   updatePassword: async () => {},
+  refreshProfile: async () => {},
 });
 
 function setAuthCookie() {
@@ -317,6 +319,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    if (!supabase) throw new Error("Authentication is not configured.");
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    const userId = sessionData.session?.user.id;
+    if (!userId) throw new Error("No active session found.");
+
+    const mapped = await fetchProfile(supabase, userId);
+    setUser(mapped.user);
+    setAgency(mapped.agency);
+    setAuthCookie();
+  }, []);
+
   const logout = useCallback(() => {
     if (supabase) {
       supabase.auth.signOut();
@@ -336,6 +351,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         requestPasswordReset,
         updatePassword,
+        refreshProfile,
       }}
     >
       {children}
