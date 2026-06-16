@@ -36,7 +36,7 @@ const navItems = (t: (k: string) => string) => [
   { label: t("reports"), href: "/reports", icon: BarChart3 },
   { label: t("calendar"), href: "/calendar", icon: Calendar },
   { label: t("settings"), href: "/settings", icon: Settings },
-  { label: t("admin"), href: "/admin", icon: ShieldCheck, superAdminOnly: true },
+  { label: t("admin"), href: "/saas-admin", icon: ShieldCheck, superAdminOnly: true },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -70,6 +70,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading, isAuthenticated, isPublic, router]);
 
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user?.role === "super_admin" && pathname === "/dashboard") {
+      router.replace("/saas-admin");
+    }
+  }, [isLoading, isAuthenticated, pathname, router, user?.role]);
+
   if (isPublic) {
     return <>{children}</>;
   }
@@ -83,7 +89,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-[var(--page-bg)] transition-colors duration-300">
+    <div className="h-screen overflow-hidden flex bg-[var(--page-bg)] transition-colors duration-300">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -94,7 +100,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 z-50 bg-[var(--sidebar-bg)] border-r border-slate-200/50 dark:border-slate-800/50 transition-all duration-300 flex flex-col ${
+        className={`fixed lg:sticky lg:top-0 inset-y-0 z-50 h-screen shrink-0 bg-[var(--sidebar-bg)] border-r border-slate-200/50 dark:border-slate-800/50 transition-all duration-300 flex flex-col shadow-xl shadow-slate-900/5 lg:shadow-none ${
           isRTL ? "border-r-0 border-l border-slate-200/50 dark:border-slate-800/50 right-0" : "left-0"
         } ${
           mobileOpen
@@ -104,7 +110,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             : "-translate-x-full lg:translate-x-0"
         } ${collapsed ? "lg:w-20" : "lg:w-72 w-80"}`}
       >
-        <div className="flex items-center justify-between h-18 px-4 py-4 border-b border-slate-200/50 dark:border-slate-800/50">
+        <div className="shrink-0 flex items-center justify-between px-4 py-4 border-b border-slate-200/50 dark:border-slate-800/50">
           <div className={`flex items-center gap-3 ${collapsed && "lg:hidden"}`}>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-deep-blue flex items-center justify-center shadow-lg shadow-brand/30 overflow-hidden">
               <img 
@@ -142,7 +148,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <nav className="shrink-0 py-4 px-3 space-y-1">
+          <div className={`px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 ${collapsed && "lg:hidden"}`}>
+            Workspace
+          </div>
           {navItems(t).filter((item) => !item.superAdminOnly || user?.role === "super_admin").map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
@@ -179,7 +188,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-200/50 dark:border-slate-800/50 space-y-2">
+        <div className="mt-auto shrink-0 px-4 pb-4 pt-3 border-t border-slate-200/70 dark:border-slate-800/70 bg-white/80 dark:bg-slate-950/30 backdrop-blur">
+          <div className={`mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 ${collapsed && "lg:hidden"}`}>
+            Preferences
+          </div>
+          <div className="space-y-1.5">
           <button
             onClick={toggleDark}
             className={`flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium transition-colors ${
@@ -215,12 +228,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <LogOut className="w-5 h-5 shrink-0" />
             <span className={`${collapsed && "lg:hidden"}`}>{t("logout")}</span>
           </button>
+          </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-[var(--sidebar-bg)]/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 transition-colors">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <header className="h-16 shrink-0 bg-[var(--sidebar-bg)]/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-4 lg:px-8 z-30 transition-colors">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileOpen(true)}
@@ -257,7 +271,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto travel-bg">
+        <main className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-8 travel-bg">
           {children}
         </main>
       </div>
