@@ -105,6 +105,7 @@ export default function AdminPage() {
     status: "active" as AgencyRow["status"],
   });
   const [agencyPlan, setAgencyPlan] = useState<PlanId>("starter");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [planForm, setPlanForm] = useState({
     name: "",
     monthlyPrice: "",
@@ -210,18 +211,23 @@ export default function AdminPage() {
   const closeModal = () => {
     setModal(null);
     setActionError(null);
+    setDeleteConfirmation("");
   };
 
   const openModal = (nextModal: ModalState) => {
     setOpenMenuAgencyId(null);
     setActionError(null);
+    setDeleteConfirmation("");
     setModal(nextModal);
   };
 
   const getActionErrorMessage = (err: unknown) => {
     if (err instanceof Error) return err.message;
-    if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
-      return err.message;
+    if (err && typeof err === "object") {
+      const record = err as Record<string, unknown>;
+      const parts = [record.message, record.details, record.hint, record.code]
+        .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+      if (parts.length) return parts.join(" ");
     }
     return "Admin action failed.";
   };
@@ -408,7 +414,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {(actionError || actionMessage) && (
+        {!modal && (actionError || actionMessage) && (
           <div className={`mx-4 mt-4 rounded-lg border p-3 text-sm ${
             actionError ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"
           }`}>
@@ -604,8 +610,13 @@ export default function AdminPage() {
       </div>
 
       {modal && (
-        <div className="fixed inset-0 z-[60] bg-slate-900/40 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white border border-slate-200 shadow-xl">
+        <div className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="relative z-[10000] w-full max-w-lg rounded-xl bg-white border border-slate-200 shadow-2xl">
+            {actionError && (
+              <div className="mx-5 mt-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {actionError}
+              </div>
+            )}
             {modal.type === "view" && (
               <div className="p-5 space-y-4">
                 <div className="flex items-center gap-3">
@@ -716,11 +727,21 @@ export default function AdminPage() {
                   This will permanently delete {modal.agency.name} and its agency-scoped data. This action cannot delete a super_admin account.
                 </p>
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                  Confirm deletion before continuing.
+                  Type DELETE to confirm this permanent deletion.
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Confirmation</label>
+                  <input
+                    value={deleteConfirmation}
+                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                    placeholder="Type DELETE"
+                    autoComplete="off"
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
+                  />
                 </div>
                 <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
                   <button onClick={closeModal} className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
-                  <button onClick={deleteAgency} disabled={actionLoading} className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50">
+                  <button onClick={deleteAgency} disabled={actionLoading || deleteConfirmation !== "DELETE"} className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
                     {actionLoading ? "Deleting..." : "Delete Agency"}
                   </button>
                 </div>
