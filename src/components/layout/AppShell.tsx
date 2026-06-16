@@ -93,14 +93,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/40 z-[80] lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:sticky lg:top-0 inset-y-0 z-50 h-screen shrink-0 bg-[var(--sidebar-bg)] border-r border-slate-200/50 dark:border-slate-800/50 transition-all duration-300 flex flex-col shadow-xl shadow-slate-900/5 lg:shadow-none ${
+        className={`fixed lg:sticky lg:top-0 inset-y-0 z-[90] h-screen shrink-0 bg-[var(--sidebar-bg)] border-r border-slate-200/50 dark:border-slate-800/50 transition-all duration-300 flex flex-col shadow-xl shadow-slate-900/5 lg:shadow-none ${
           isRTL ? "border-r-0 border-l border-slate-200/50 dark:border-slate-800/50 right-0" : "left-0"
         } ${
           mobileOpen
