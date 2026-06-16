@@ -5,6 +5,7 @@ import { useInvoices, InvoiceItem, useInvoiceSettings, useAgencyBranding, useCus
 import { usePermissions } from '@/hooks/useDataStore';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useDataMode } from '@/context/DataModeContext';
 import { Search, Plus, X, Save, Printer, Download, MessageCircle, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Send, Smartphone } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { CURRENCIES, getCurrencySymbol, INVOICE_STATUS_COLORS, WHATSAPP_TEMPLATES } from '@/lib/constants';
@@ -44,6 +45,7 @@ export default function InvoicesPage() {
   const { can } = usePermissions();
   const { user, agency } = useAuth();
   const { t } = useLanguage();
+  const { useLocalStorage } = useDataMode();
   const { settings: invoiceSettings, generateNumber } = useInvoiceSettings();
   const { branding } = useAgencyBranding();
   const { customers } = useCustomers();
@@ -156,11 +158,15 @@ export default function InvoicesPage() {
   const handleSave = async () => {
     setSaveError(null);
 
-    if (!form.customer_id || !UUID_RE.test(form.customer_id)) {
+    if (!form.customer_id) {
       setSaveError('Please select a customer from the dropdown before saving.');
       return;
     }
-    if (!user?.agencyId || !UUID_RE.test(user.agencyId)) {
+    if (!useLocalStorage && !UUID_RE.test(form.customer_id)) {
+      setSaveError('Please select a valid customer from the dropdown before saving.');
+      return;
+    }
+    if (!user?.agencyId || (!useLocalStorage && !UUID_RE.test(user.agencyId))) {
       setSaveError('Your agency account is not properly set up. Please log out and log in again.');
       return;
     }
