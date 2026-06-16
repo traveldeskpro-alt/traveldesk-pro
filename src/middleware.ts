@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
       .from('users')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profile?.role !== 'super_admin') {
       const dashboardUrl = new URL('/dashboard', request.url);

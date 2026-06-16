@@ -59,7 +59,7 @@ export interface Database {
       users: {
         Row: {
           id: string;
-          agency_id: string;
+          agency_id: string | null;
           email: string;
           name: string;
           role: 'super_admin' | 'owner' | 'admin' | 'manager' | 'agent' | 'accountant' | 'viewer';
@@ -68,7 +68,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          agency_id: string;
+          agency_id?: string | null;
           email: string;
           name: string;
           role?: 'super_admin' | 'owner' | 'admin' | 'manager' | 'agent' | 'accountant' | 'viewer';
@@ -77,7 +77,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          agency_id?: string;
+          agency_id?: string | null;
           email?: string;
           name?: string;
           role?: 'super_admin' | 'owner' | 'admin' | 'manager' | 'agent' | 'accountant' | 'viewer';

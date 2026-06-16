@@ -26,7 +26,7 @@ CREATE TABLE agencies (
 -- 2. Users (linked to Supabase Auth, one row per staff member)
 CREATE TABLE users (
   id uuid REFERENCES auth.users(id) PRIMARY KEY,
-  agency_id uuid REFERENCES agencies(id) NOT NULL,
+  agency_id uuid REFERENCES agencies(id),
   email TEXT NOT NULL,
   name TEXT NOT NULL,
   role TEXT DEFAULT 'viewer' CHECK (role IN ('super_admin', 'owner', 'admin', 'manager', 'agent', 'accountant', 'viewer')),
@@ -140,30 +140,74 @@ ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 
--- Agencies: user can only see their own agency
-CREATE POLICY agencies_isolation ON agencies
-  FOR ALL USING (id IN (SELECT agency_id FROM users WHERE id = auth.uid()));
+CREATE OR REPLACE FUNCTION public.get_my_agency_id()
+  RETURNS uuid
+  LANGUAGE sql
+  STABLE
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+  SELECT agency_id FROM public.users WHERE id = auth.uid() LIMIT 1;
+$$;
 
--- Users: can only see users in their agency
-CREATE POLICY users_isolation ON users
-  FOR ALL USING (agency_id IN (SELECT agency_id FROM users WHERE id = auth.uid()));
+CREATE OR REPLACE FUNCTION public.get_my_role()
+  RETURNS text
+  LANGUAGE sql
+  STABLE
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+  SELECT role FROM public.users WHERE id = auth.uid() LIMIT 1;
+$$;
 
--- Customers: can only see customers in their agency
+CREATE OR REPLACE FUNCTION public.is_super_admin()
+  RETURNS boolean
+  LANGUAGE sql
+  STABLE
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+  SELECT COALESCE(public.get_my_role() = 'super_admin', false);
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_my_agency_id() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_my_role() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_super_admin() TO authenticated;
+
+-- Agencies: platform admins can list agencies; agency users see only theirs.
+CREATE POLICY agencies_select ON agencies
+  FOR SELECT USING (public.is_super_admin() OR id = public.get_my_agency_id());
+CREATE POLICY agencies_update ON agencies
+  FOR UPDATE USING (id = public.get_my_agency_id()) WITH CHECK (id = public.get_my_agency_id());
+CREATE POLICY agencies_delete ON agencies
+  FOR DELETE USING (id = public.get_my_agency_id());
+
+-- Users: each user can read their own row; agency users can read their agency.
+CREATE POLICY users_select ON users
+  FOR SELECT USING (
+    id = auth.uid()
+    OR public.is_super_admin()
+    OR (agency_id IS NOT NULL AND agency_id = public.get_my_agency_id())
+  );
+CREATE POLICY users_update ON users
+  FOR UPDATE USING (
+    id = auth.uid()
+    OR (agency_id IS NOT NULL AND agency_id = public.get_my_agency_id())
+  ) WITH CHECK (
+    id = auth.uid()
+    OR (agency_id IS NOT NULL AND agency_id = public.get_my_agency_id())
+  );
+CREATE POLICY users_delete ON users
+  FOR DELETE USING (agency_id IS NOT NULL AND agency_id = public.get_my_agency_id());
+
+-- Agency data: only users with the matching agency_id can access rows.
 CREATE POLICY customers_isolation ON customers
-  FOR ALL USING (agency_id IN (SELECT agency_id FROM users WHERE id = auth.uid()));
-
--- Bookings
+  FOR ALL USING (agency_id = public.get_my_agency_id()) WITH CHECK (agency_id = public.get_my_agency_id());
 CREATE POLICY bookings_isolation ON bookings
-  FOR ALL USING (agency_id IN (SELECT agency_id FROM users WHERE id = auth.uid()));
-
--- Invoices
+  FOR ALL USING (agency_id = public.get_my_agency_id()) WITH CHECK (agency_id = public.get_my_agency_id());
 CREATE POLICY invoices_isolation ON invoices
-  FOR ALL USING (agency_id IN (SELECT agency_id FROM users WHERE id = auth.uid()));
-
--- Agents
+  FOR ALL USING (agency_id = public.get_my_agency_id()) WITH CHECK (agency_id = public.get_my_agency_id());
 CREATE POLICY agents_isolation ON agents
-  FOR ALL USING (agency_id IN (SELECT agency_id FROM users WHERE id = auth.uid()));
-
--- Payments
+  FOR ALL USING (agency_id = public.get_my_agency_id()) WITH CHECK (agency_id = public.get_my_agency_id());
 CREATE POLICY payments_isolation ON payments
-  FOR ALL USING (agency_id IN (SELECT agency_id FROM users WHERE id = auth.uid()));
+  FOR ALL USING (agency_id = public.get_my_agency_id()) WITH CHECK (agency_id = public.get_my_agency_id());
