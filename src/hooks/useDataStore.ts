@@ -235,12 +235,17 @@ export interface CustomerRecord {
 export function useCustomers() {
   const { user } = useAuth();
   const { useLocalStorage } = useDataMode();
-  const agencyId = user?.agencyId || 'demo';
+  const agencyId = user?.agencyId || (useLocalStorage ? 'demo' : '');
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    if (!agencyId) {
+      setCustomers([]);
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
     if (!useLocalStorage && isSupabaseEnabled && supabase) {
       supabase
         .from('customers')
@@ -259,6 +264,7 @@ export function useCustomers() {
   }, [agencyId, useLocalStorage]);
 
   const create = useCallback(async (data: Omit<CustomerRecord, 'id' | 'agency_id' | 'created_at' | 'total_bookings' | 'total_spend'>) => {
+    if (!agencyId) throw new Error('An agency account is required to create customers.');
     const newRecord: CustomerRecord = {
       id: crypto?.randomUUID ? crypto.randomUUID() : generateId(),
       agency_id: agencyId,
@@ -354,12 +360,17 @@ export interface BookingRecord {
 export function useBookings() {
   const { user } = useAuth();
   const { useLocalStorage } = useDataMode();
-  const agencyId = user?.agencyId || 'demo';
+  const agencyId = user?.agencyId || (useLocalStorage ? 'demo' : '');
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    if (!agencyId) {
+      setBookings([]);
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
     if (!useLocalStorage && isSupabaseEnabled && supabase) {
       supabase
         .from('bookings')
@@ -378,6 +389,7 @@ export function useBookings() {
   }, [agencyId, useLocalStorage]);
 
   const create = useCallback(async (data: Omit<BookingRecord, 'id' | 'agency_id' | 'created_at' | 'updated_at'>) => {
+    if (!agencyId) throw new Error('An agency account is required to create bookings.');
     // Enforce the demo booking limit when running in localStorage mode.
     // Reading from storage (not React state) ensures the check is always
     // up-to-date regardless of which hook instance is calling.
@@ -528,12 +540,17 @@ export interface InvoiceRecord {
 export function useInvoices() {
   const { user } = useAuth();
   const { useLocalStorage } = useDataMode();
-  const agencyId = user?.agencyId || 'demo';
+  const agencyId = user?.agencyId || (useLocalStorage ? 'demo' : '');
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    if (!agencyId) {
+      setInvoices([]);
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
     if (!useLocalStorage && isSupabaseEnabled && supabase) {
       supabase
         .from('invoices')
@@ -555,6 +572,7 @@ export function useInvoices() {
   }, [agencyId, useLocalStorage]);
 
   const create = useCallback(async (data: Omit<InvoiceRecord, 'id' | 'agency_id' | 'created_at'>) => {
+    if (!agencyId) throw new Error('An agency account is required to create invoices.');
     const issuedAt = normalizeTimestamp(data.issued_at, 'Issue date');
     const dueDate = normalizeTimestamp(data.due_date, 'Due date');
     if (new Date(dueDate) < new Date(issuedAt)) {
@@ -672,12 +690,17 @@ export interface AgentRecord {
 export function useAgents() {
   const { user } = useAuth();
   const { useLocalStorage } = useDataMode();
-  const agencyId = user?.agencyId || 'demo';
+  const agencyId = user?.agencyId || (useLocalStorage ? 'demo' : '');
   const [agents, setAgents] = useState<AgentRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    if (!agencyId) {
+      setAgents([]);
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
     if (!useLocalStorage && isSupabaseEnabled && supabase) {
       supabase
         .from('agents')
@@ -696,6 +719,7 @@ export function useAgents() {
   }, [agencyId, useLocalStorage]);
 
   const create = useCallback(async (data: Omit<AgentRecord, 'id' | 'agency_id' | 'created_at' | 'total_sales' | 'commission_earned' | 'commission_paid'>) => {
+    if (!agencyId) throw new Error('An agency account is required to create agents.');
     const newRecord: AgentRecord = {
       id: crypto?.randomUUID ? crypto.randomUUID() : generateId(),
       agency_id: agencyId,
@@ -769,6 +793,7 @@ export function usePermissions() {
 
   const can = useCallback((action: 'create' | 'edit' | 'delete' | 'view' | 'manage' | 'admin' | 'reports') => {
     const perms: Record<string, string[]> = {
+      super_admin: ['view', 'admin', 'reports'],
       owner: ['create', 'edit', 'delete', 'view', 'manage', 'admin', 'reports'],
       admin: ['create', 'edit', 'delete', 'view', 'manage', 'admin', 'reports'],
       manager: ['create', 'edit', 'view', 'reports'],

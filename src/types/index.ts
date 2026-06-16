@@ -33,7 +33,7 @@ export interface Branch {
 
 export interface AgencyUser {
   id: string;
-  agencyId: string;
+  agencyId: string | null;
   email: string;
   name: string;
   role: Role;

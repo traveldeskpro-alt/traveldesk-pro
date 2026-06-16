@@ -16,7 +16,7 @@ interface User {
   name: string;
   email: string;
   role: string;
-  agencyId: string;
+  agencyId: string | null;
   avatar?: string;
 }
 
@@ -90,53 +90,64 @@ function clearAuthCookie() {
   }
 }
 
-// Maps a Supabase users+agencies joined row into typed state objects.
-function mapProfile(profile: any): { user: User; agency: Agency } | null {
-  if (!profile?.agencies) return null;
-  const a = profile.agencies as any;
+function mapAgency(a: any): Agency {
   return {
-    user: {
-      id: profile.id,
-      name: profile.name,
-      email: profile.email,
-      role: profile.role,
-      agencyId: profile.agency_id,
-    },
-    agency: {
-      id: a.id,
-      name: a.name,
-      email: a.email,
-      phone: a.phone,
-      crNumber: a.cr_number || "",
-      address: a.address || "",
-      logoUrl: a.logo_url || "",
-      currency: a.currency || "OMR",
-      language: a.language || "en",
-      status: a.status || "active",
-      plan: a.plan || "starter",
-      createdAt: a.created_at,
-      updatedAt: a.updated_at,
-    },
+    id: a.id,
+    name: a.name,
+    email: a.email,
+    phone: a.phone,
+    crNumber: a.cr_number || "",
+    address: a.address || "",
+    logoUrl: a.logo_url || "",
+    currency: a.currency || "OMR",
+    language: a.language || "en",
+    status: a.status || "active",
+    plan: a.plan || "starter",
+    createdAt: a.created_at,
+    updatedAt: a.updated_at,
   };
 }
 
 async function fetchProfile(sb: NonNullable<typeof supabase>, userId: string) {
-  const res = await sb
+  const { data: profile, error: profileError } = await sb
     .from("users")
-    .select("*, agencies(*)")
+    .select("id,agency_id,email,name,role,active")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  if (!res.data || res.error) {
-    throw res.error || new Error("Registration completed, but the owner profile could not be loaded.");
+  if (profileError) throw profileError;
+  if (!profile) {
+    throw new Error("Your account profile could not be found.");
   }
 
-  const mapped = mapProfile(res.data);
-  if (!mapped) {
-    throw new Error("Registration completed, but the agency profile is incomplete.");
+  const user: User = {
+    id: profile.id,
+    name: profile.name,
+    email: profile.email,
+    role: profile.role,
+    agencyId: profile.agency_id,
+  };
+
+  if (profile.role === "super_admin" && !profile.agency_id) {
+    return { user, agency: null };
   }
 
-  return mapped;
+  if (!profile.agency_id) {
+    throw new Error("Your agency profile is incomplete.");
+  }
+
+  const { data: agency, error: agencyError } = await sb
+    .from("agencies")
+    .select("*")
+    .eq("id", profile.agency_id)
+    .maybeSingle();
+
+  if (agencyError) throw agencyError;
+  if (!agency) {
+    throw new Error("Your agency profile could not be loaded.");
+  }
+
+  return { user, agency: mapAgency(agency) };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -192,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // INITIAL_SESSION | SIGNED_IN | USER_UPDATED with a valid session.
         const sb = supabase!;
-        let mapped: { user: User; agency: Agency };
+        let mapped: { user: User; agency: Agency | null };
         try {
           mapped = await fetchProfile(sb, session.user.id);
         } catch {
