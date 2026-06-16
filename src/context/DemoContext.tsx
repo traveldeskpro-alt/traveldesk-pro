@@ -60,6 +60,9 @@ const demoAuthValue: AuthContextType = {
   updatePassword: async () => {
     throw new Error("Password update is not available in demo mode.");
   },
+  refreshProfile: async () => {
+    throw new Error("Profile refresh is not available in demo mode.");
+  },
 };
 
 export function DemoProvider({ children }: { children: React.ReactNode }) {
