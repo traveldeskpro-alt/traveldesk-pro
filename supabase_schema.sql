@@ -29,7 +29,7 @@ CREATE TABLE users (
   agency_id uuid REFERENCES agencies(id) NOT NULL,
   email TEXT NOT NULL,
   name TEXT NOT NULL,
-  role TEXT DEFAULT 'viewer' CHECK (role IN ('owner', 'admin', 'manager', 'agent', 'accountant', 'viewer')),
+  role TEXT DEFAULT 'viewer' CHECK (role IN ('super_admin', 'owner', 'admin', 'manager', 'agent', 'accountant', 'viewer')),
   active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

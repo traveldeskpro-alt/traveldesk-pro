@@ -1,4 +1,4 @@
-export type Role = "owner" | "admin" | "manager" | "agent" | "accountant" | "viewer";
+export type Role = "super_admin" | "owner" | "admin" | "manager" | "agent" | "accountant" | "viewer";
 
 export type BookingType = "air_ticket" | "visa" | "hotel" | "group_tour";
 

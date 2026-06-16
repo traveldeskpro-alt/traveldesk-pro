@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useWhatsAppSettings } from "@/hooks/useDataStore";
 import { supabase } from "@/lib/supabase";
 import { CURRENCIES, SUBSCRIPTION_PLANS } from "@/lib/constants";
 import {
@@ -16,10 +17,7 @@ import {
   Upload,
   Save,
   CheckCircle,
-  AlertTriangle,
   Briefcase,
-  ArrowUpRight,
-  ChevronRight,
   MapPin,
   Phone,
   Mail,
@@ -36,7 +34,21 @@ const tabs = [
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "security", label: "Security", icon: Shield },
   { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "whatsapp", label: "WhatsApp Business Settings", icon: MessageCircle },
 ];
+
+const notificationLabels = [
+  "New booking created",
+  "Payment received",
+  "Invoice generated",
+  "Commission paid",
+  "System updates",
+];
+
+const defaultNotifications = notificationLabels.reduce<Record<string, boolean>>((acc, label) => {
+  acc[label] = true;
+  return acc;
+}, {});
 
 type SettingsUser = {
   id: string;
@@ -47,14 +59,22 @@ type SettingsUser = {
 };
 
 export default function SettingsPage() {
-  const { user, agency, refreshProfile } = useAuth();
-  const { t, language, setLanguage } = useLanguage();
+  const { user, agency, refreshProfile, updatePassword } = useAuth();
+  const { t, setLanguage } = useLanguage();
+  const { settings: whatsappSettings, update: updateWhatsAppSettings } = useWhatsAppSettings();
   const [activeTab, setActiveTab] = useState("general");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [users, setUsers] = useState<SettingsUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [notifications, setNotifications] = useState(defaultNotifications);
+  const [notificationsSaved, setNotificationsSaved] = useState(false);
+  const [securityForm, setSecurityForm] = useState({ newPassword: "", confirmPassword: "" });
+  const [securitySaving, setSecuritySaving] = useState(false);
+  const [securityMessage, setSecurityMessage] = useState<string | null>(null);
+  const [securityError, setSecurityError] = useState<string | null>(null);
+  const [whatsappSaved, setWhatsappSaved] = useState(false);
   const [profileForm, setProfileForm] = useState({
     name: "",
     email: "",
@@ -100,6 +120,62 @@ export default function SettingsPage() {
     loadUsers();
     return () => { cancelled = true; };
   }, [user?.agencyId]);
+
+  useEffect(() => {
+    if (!user?.agencyId || typeof window === "undefined") return;
+    const raw = localStorage.getItem(`tdp_settings_${user.agencyId}_notifications`);
+    if (raw) {
+      try {
+        setNotifications({ ...defaultNotifications, ...JSON.parse(raw) });
+      } catch {
+        setNotifications(defaultNotifications);
+      }
+    } else {
+      setNotifications(defaultNotifications);
+    }
+  }, [user?.agencyId]);
+
+  const currentPlanId = agency?.plan || "starter";
+  const currentPlan = SUBSCRIPTION_PLANS.find((plan) => plan.id === currentPlanId) || SUBSCRIPTION_PLANS[0];
+
+  const saveNotifications = (next: Record<string, boolean>) => {
+    setNotifications(next);
+    if (user?.agencyId && typeof window !== "undefined") {
+      localStorage.setItem(`tdp_settings_${user.agencyId}_notifications`, JSON.stringify(next));
+    }
+    setNotificationsSaved(true);
+    setTimeout(() => setNotificationsSaved(false), 1500);
+  };
+
+  const handlePasswordSave = async () => {
+    setSecurityError(null);
+    setSecurityMessage(null);
+    if (securityForm.newPassword.length < 8) {
+      setSecurityError("Password must be at least 8 characters.");
+      return;
+    }
+    if (securityForm.newPassword !== securityForm.confirmPassword) {
+      setSecurityError("Passwords do not match.");
+      return;
+    }
+
+    setSecuritySaving(true);
+    try {
+      await updatePassword(securityForm.newPassword);
+      setSecurityForm({ newPassword: "", confirmPassword: "" });
+      setSecurityMessage("Password updated.");
+    } catch (err) {
+      setSecurityError(err instanceof Error ? err.message : "Failed to update password.");
+    } finally {
+      setSecuritySaving(false);
+    }
+  };
+
+  const saveWhatsAppSettings = () => {
+    updateWhatsAppSettings({ provider: "wame", apiKey: "", instanceId: "", enabled: true });
+    setWhatsappSaved(true);
+    setTimeout(() => setWhatsappSaved(false), 1500);
+  };
 
   const handleSave = async () => {
     setSaveError(null);
@@ -177,7 +253,11 @@ export default function SettingsPage() {
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center relative">
                   <Briefcase className="w-8 h-8 text-slate-400" />
-                  <button className="absolute bottom-0 right-0 w-6 h-6 bg-brand text-white rounded-full flex items-center justify-center shadow-sm">
+                  <button
+                    disabled
+                    title="Logo upload is coming soon"
+                    className="absolute bottom-0 right-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center shadow-sm cursor-not-allowed"
+                  >
                     <Upload className="w-3 h-3" />
                   </button>
                 </div>
@@ -247,7 +327,10 @@ export default function SettingsPage() {
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <MessageCircle className="w-4 h-4" /> WhatsApp Business Settings
+                  <MessageCircle className="w-4 h-4" />
+                  <button onClick={() => setActiveTab("whatsapp")} className="font-medium text-brand hover:underline">
+                    WhatsApp Business Settings
+                  </button>
                 </div>
                 <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -267,7 +350,7 @@ export default function SettingsPage() {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-navy">{t("usersRoles")}</h3>
-                <button className="px-3 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-deep-blue transition-colors">+ Invite User</button>
+                <button disabled title="Invites are coming soon" className="px-3 py-2 bg-slate-200 text-slate-500 text-sm font-medium rounded-lg cursor-not-allowed">+ Invite User</button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -294,7 +377,7 @@ export default function SettingsPage() {
                           </span>
                         </td>
                         <td className="px-3 py-3">
-                          <button className="text-slate-500 hover:text-brand text-xs font-medium">Edit</button>
+                          <button disabled title="Role editing is coming soon" className="text-slate-400 text-xs font-medium cursor-not-allowed">Edit</button>
                         </td>
                       </tr>
                     ))}
@@ -321,13 +404,13 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-bold text-navy">{t("currentPlan")}</h3>
-                    <p className="text-sm text-slate-500">You are currently on the Professional plan</p>
+                    <p className="text-sm text-slate-500">You are currently on the {currentPlan.name} plan</p>
                   </div>
-                  <span className="px-3 py-1 bg-brand text-white text-xs font-bold rounded-full">Professional</span>
+                  <span className="px-3 py-1 bg-brand text-white text-xs font-bold rounded-full">{currentPlan.name}</span>
                 </div>
-                <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   {SUBSCRIPTION_PLANS.map((plan) => (
-                    <div key={plan.id} className={`border rounded-xl p-4 transition-all ${plan.id === "professional" ? "border-brand bg-brand/5 ring-1 ring-brand" : "border-slate-200"}`}>
+                    <div key={plan.id} className={`border rounded-xl p-4 transition-all ${plan.id === currentPlanId ? "border-brand bg-brand/5 ring-1 ring-brand" : "border-slate-200"}`}>
                       <h4 className="font-bold text-navy">{plan.name}</h4>
                       <p className="text-2xl font-bold text-brand mt-2">{plan.priceOmr} <span className="text-sm font-normal text-slate-500">OMR/mo</span></p>
                       <ul className="mt-3 space-y-1">
@@ -335,8 +418,12 @@ export default function SettingsPage() {
                           <li key={i} className="text-xs text-slate-600 flex items-start gap-1.5"><CheckCircle className="w-3 h-3 text-brand mt-0.5" />{f}</li>
                         ))}
                       </ul>
-                      <button className={`w-full mt-4 py-2 rounded-lg text-sm font-medium transition-colors ${plan.id === "professional" ? "bg-brand text-white" : "border border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
-                        {plan.id === "professional" ? "Current Plan" : plan.id === "enterprise" ? t("contactSales") : t("upgrade")}
+                      <button
+                        disabled
+                        title={plan.id === currentPlanId ? "Current plan" : "Plan changes are handled by support"}
+                        className={`w-full mt-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed ${plan.id === currentPlanId ? "bg-brand text-white" : "border border-slate-200 text-slate-400 bg-slate-50"}`}
+                      >
+                        {plan.id === currentPlanId ? "Current Plan" : plan.id === "enterprise" ? t("contactSales") : t("upgrade")}
                       </button>
                     </div>
                   ))}
@@ -348,15 +435,23 @@ export default function SettingsPage() {
           {/* Notifications */}
           {activeTab === "notifications" && (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
-              <h3 className="font-bold text-navy mb-2">Notification Preferences</h3>
-              {["New booking created", "Payment received", "Invoice generated", "Commission paid", "System updates"].map((label, i) => (
-                <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-navy mb-2">Notification Preferences</h3>
+                {notificationsSaved && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
+              </div>
+              {notificationLabels.map((label) => (
+                <div key={label} className="flex items-center justify-between gap-4 py-3 border-b border-slate-50 last:border-0">
                   <div className="flex items-center gap-3">
                     <Bell className="w-4 h-4 text-slate-400" />
                     <span className="text-sm text-slate-700">{label}</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <input
+                      type="checkbox"
+                    checked={!!notifications[label]}
+                      onChange={(e) => saveNotifications({ ...notifications, [label]: e.target.checked })}
+                      className="sr-only peer"
+                    />
                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand"></div>
                   </label>
                 </div>
@@ -370,23 +465,38 @@ export default function SettingsPage() {
               <h3 className="font-bold text-navy mb-2">Security Settings</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Current Password</label>
-                  <input type="password" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
-                  <input type="password" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  <input
+                    type="password"
+                    value={securityForm.newPassword}
+                    onChange={(e) => setSecurityForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Confirm New Password</label>
-                  <input type="password" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  <input
+                    type="password"
+                    value={securityForm.confirmPassword}
+                    onChange={(e) => setSecurityForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                  />
                 </div>
               </div>
+              {securityError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{securityError}</div>}
+              {securityMessage && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{securityMessage}</div>}
+              <button
+                onClick={handlePasswordSave}
+                disabled={securitySaving}
+                className="px-4 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {securitySaving ? "Saving..." : "Update Password"}
+              </button>
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <div className="text-sm text-slate-500 flex items-center gap-2">
                   <Shield className="w-4 h-4" /> Two-factor authentication
                 </div>
-                <button className="px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-deep-blue transition-colors">Enable 2FA</button>
+                <button disabled title="Two-factor authentication is coming soon" className="px-4 py-2 bg-slate-200 text-slate-500 text-sm font-medium rounded-lg cursor-not-allowed">Enable 2FA</button>
               </div>
             </div>
           )}
@@ -398,8 +508,12 @@ export default function SettingsPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
                 <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value as "en" | "ar")}
+                  value={profileForm.language}
+                  onChange={(e) => {
+                    const nextLanguage = e.target.value as "en" | "ar";
+                    setProfileForm((prev) => ({ ...prev, language: nextLanguage }));
+                    setLanguage(nextLanguage);
+                  }}
                   className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                 >
                   <option value="en">English</option>
@@ -407,16 +521,62 @@ export default function SettingsPage() {
                 </select>
                 <p className="text-xs text-slate-500 mt-1">Switching to Arabic will enable RTL layout</p>
               </div>
+              <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                {saving ? "Saving..." : saved ? "Saved" : "Save Appearance"}
+              </button>
+              {saveError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {saveError}
+                </div>
+              )}
               <div className="pt-4 border-t border-slate-100">
-                <button className="flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors">
+                <button disabled title="Data export is coming soon" className="flex items-center gap-2 text-sm text-slate-400 px-3 py-2 rounded-lg cursor-not-allowed">
                   <Database className="w-4 h-4" /> Export all data
                 </button>
               </div>
               <div className="pt-2">
-                <button className="flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors">
+                <button disabled title="Account deletion is coming soon" className="flex items-center gap-2 text-sm text-slate-400 px-3 py-2 rounded-lg cursor-not-allowed">
                   <Trash2 className="w-4 h-4" /> Delete account
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* WhatsApp */}
+          {activeTab === "whatsapp" && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+              <div>
+                <h3 className="font-bold text-navy">WhatsApp Business Settings</h3>
+                <p className="text-sm text-slate-500 mt-1">Invoice sharing uses WhatsApp Web via wa.me with a pre-filled invoice summary.</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Sharing method</label>
+                  <input
+                    readOnly
+                    value="WhatsApp Web (wa.me)"
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700"
+                  />
+                </div>
+                <label className="flex items-center gap-3 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={whatsappSettings.enabled}
+                    onChange={(e) => updateWhatsAppSettings({ provider: "wame", enabled: e.target.checked })}
+                    className="w-4 h-4 rounded border-slate-300 text-brand focus:ring-brand"
+                  />
+                  Remember wa.me as this agency's WhatsApp sharing preference
+                </label>
+                <p className="text-xs text-slate-500">API providers are not connected in this app, so invoice sharing does not claim WhatsApp Business API delivery.</p>
+              </div>
+              <button
+                onClick={saveWhatsAppSettings}
+                className="px-4 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                {whatsappSaved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                {whatsappSaved ? "Saved" : "Save WhatsApp Settings"}
+              </button>
             </div>
           )}
         </div>

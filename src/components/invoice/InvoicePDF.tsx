@@ -2,24 +2,14 @@
 
 import React from 'react';
 import {
-  Document, Page, Text, View, StyleSheet, Font, PDFDownloadLink, pdf
+  Document, Page, Text, View, StyleSheet, pdf
 } from '@react-pdf/renderer';
 import { InvoiceRecord, AgencyBranding } from '@/hooks/useDataStore';
-
-Font.register({
-  family: 'Inter',
-  src: 'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.ttf',
-});
-
-Font.register({
-  family: 'InterBold',
-  src: 'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYAZ9hjp-Ek-_EeA.ttf',
-});
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: 'Inter',
+    fontFamily: 'Helvetica',
     fontSize: 10,
     color: '#1e293b',
     backgroundColor: '#ffffff',
@@ -36,7 +26,7 @@ const styles = StyleSheet.create({
   brandCol: { width: '55%' },
   brandName: {
     fontSize: 20,
-    fontFamily: 'InterBold',
+    fontFamily: 'Helvetica-Bold',
     color: '#0f172a',
     marginBottom: 6,
   },
@@ -65,7 +55,7 @@ const styles = StyleSheet.create({
   invoiceCardValue: {
     fontSize: 11,
     color: '#0f172a',
-    fontFamily: 'InterBold',
+    fontFamily: 'Helvetica-Bold',
     marginBottom: 10,
   },
   statusBadge: {
@@ -73,7 +63,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 12,
     fontSize: 8,
-    fontFamily: 'InterBold',
+    fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -87,7 +77,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 6,
-    fontFamily: 'InterBold',
+    fontFamily: 'Helvetica-Bold',
   },
   customerRow: {
     flexDirection: 'row',
@@ -97,7 +87,7 @@ const styles = StyleSheet.create({
   customerBox: { width: '48%' },
   customerName: {
     fontSize: 13,
-    fontFamily: 'InterBold',
+    fontFamily: 'Helvetica-Bold',
     color: '#0f172a',
     marginBottom: 4,
   },
@@ -129,7 +119,7 @@ const styles = StyleSheet.create({
   th: {
     fontSize: 8,
     color: '#94a3b8',
-    fontFamily: 'InterBold',
+    fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -163,12 +153,12 @@ const styles = StyleSheet.create({
   },
   grandTotalLabel: {
     fontSize: 12,
-    fontFamily: 'InterBold',
+    fontFamily: 'Helvetica-Bold',
     color: '#0f172a',
   },
   grandTotalValue: {
     fontSize: 12,
-    fontFamily: 'InterBold',
+    fontFamily: 'Helvetica-Bold',
     color: '#2563eb',
   },
   notesSection: {
@@ -186,7 +176,7 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontFamily: 'InterBold',
+    fontFamily: 'Helvetica-Bold',
     marginBottom: 4,
   },
   notesText: {
@@ -278,7 +268,7 @@ export function InvoiceDocument({ invoice, branding }: { invoice: InvoiceRecord;
               <Text style={[styles.th, styles.colPrice]}>Unit Price</Text>
               <Text style={[styles.th, styles.colTotal]}>Total</Text>
             </View>
-            {invoice.items.map((item, idx) => (
+            {(invoice.items ?? []).map((item, idx) => (
               <View key={idx} style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowAlt : {}]}>
                 <Text style={[styles.td, styles.colDesc]}>{item.description}</Text>
                 <Text style={[styles.td, styles.colQty]}>{item.quantity}</Text>

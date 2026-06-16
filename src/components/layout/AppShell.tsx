@@ -36,7 +36,7 @@ const navItems = (t: (k: string) => string) => [
   { label: t("reports"), href: "/reports", icon: BarChart3 },
   { label: t("calendar"), href: "/calendar", icon: Calendar },
   { label: t("settings"), href: "/settings", icon: Settings },
-  { label: t("admin"), href: "/admin", icon: ShieldCheck },
+  { label: t("admin"), href: "/admin", icon: ShieldCheck, superAdminOnly: true },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -143,7 +143,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems(t).map((item) => {
+          {navItems(t).filter((item) => !item.superAdminOnly || user?.role === "super_admin").map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (

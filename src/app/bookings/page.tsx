@@ -46,6 +46,23 @@ const processColors: Record<string, string> = {
   pending: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
+function csvCell(value: string | number | null | undefined) {
+  const text = value == null ? '' : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function downloadFile(filename: string, contents: string, type: string) {
+  const blob = new Blob([contents], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function BookingsPage() {
   const { bookings, loading, create, update, remove, search } = useBookings();
   const { customers } = useCustomers();
@@ -164,6 +181,42 @@ export default function BookingsPage() {
   };
 
   const filtered = search(query, filter);
+  const hasExportData = filtered.length > 0;
+
+  const exportBookings = () => {
+    if (!hasExportData) return;
+    const header = [
+      'Booking ID',
+      'Customer',
+      'Type',
+      'Details',
+      'Sale Price',
+      'Cost Price',
+      'Profit',
+      'Currency',
+      'Payment Status',
+      'Process Status',
+      'Agent',
+      'Date',
+    ];
+    const rows = filtered.map((b) => [
+      b.id,
+      b.customer_name,
+      typeLabels[b.type] || b.type,
+      b.details,
+      b.sale_price,
+      b.cost_price,
+      b.sale_price - b.cost_price,
+      b.currency,
+      b.payment_status,
+      b.process_status,
+      b.agent_name || '',
+      formatDate(b.created_at),
+    ]);
+    const csv = [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
+    const date = new Date().toISOString().split('T')[0];
+    downloadFile(`bookings-${date}.csv`, csv, 'text/csv;charset=utf-8');
+  };
 
   const totalRevenue = bookings.reduce((s, b) => s + b.sale_price, 0);
   const totalCost = bookings.reduce((s, b) => s + b.cost_price, 0);
@@ -187,7 +240,15 @@ export default function BookingsPage() {
         </div>
         {can('create') && (
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="gap-2"><Filter className="w-4 h-4" /> Export</Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={exportBookings}
+              disabled={!hasExportData}
+              title={!hasExportData ? 'No bookings to export' : 'Download filtered bookings as CSV'}
+            >
+              <Filter className="w-4 h-4" /> Export
+            </Button>
             <Button variant="primary" className="gap-2" onClick={openCreate}><Plus className="w-4 h-4" /> New Booking</Button>
           </div>
         )}
@@ -237,6 +298,7 @@ export default function BookingsPage() {
           {can('create') && (
             <Button variant="primary" className="mt-4 gap-2" onClick={openCreate}><Plus className="w-4 h-4" /> Create First Booking</Button>
           )}
+          <p className="text-xs text-slate-400 mt-3">Export becomes available after at least one booking matches the current filters.</p>
         </div>
       )}
 
