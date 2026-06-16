@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { supabase } from "@/lib/supabase";
@@ -28,6 +29,7 @@ type AgencyRow = {
 
 export default function AdminPage() {
   const { user, agency } = useAuth();
+  const router = useRouter();
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("agencies");
@@ -35,12 +37,21 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const isAdmin = user?.role === "owner" || user?.role === "admin";
+  const isSuperAdmin = user?.role === "super_admin";
+
+  useEffect(() => {
+    if (user && !isSuperAdmin) {
+      router.replace("/dashboard");
+    }
+  }, [isSuperAdmin, router, user]);
 
   useEffect(() => {
     let cancelled = false;
     async function loadAgencies() {
-      if (!isAdmin) return;
+      if (!isSuperAdmin) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setLoadError(null);
 
@@ -77,9 +88,9 @@ export default function AdminPage() {
 
     loadAgencies();
     return () => { cancelled = true; };
-  }, [agency, isAdmin]);
+  }, [agency, isSuperAdmin]);
 
-  if (!isAdmin) {
+  if (!isSuperAdmin) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -104,7 +115,7 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy">{t("saasAdmin")}</h1>
+        <h1 className="text-2xl font-bold text-navy">{t("admin")}</h1>
         <p className="text-slate-500 text-sm mt-1">Manage all agencies and platform settings</p>
       </div>
 

@@ -75,6 +75,7 @@ export const SUBSCRIPTION_PLANS = [
 ];
 
 export const ROLES = [
+  { id: "super_admin", label: "Super Admin" },
   { id: "owner", label: "Owner" },
   { id: "admin", label: "Admin" },
   { id: "manager", label: "Manager" },

@@ -39,10 +39,10 @@ export default function Sidebar() {
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isAdmin = user?.role === "owner" || user?.role === "admin";
+  const isSuperAdmin = user?.role === "super_admin";
 
   const filteredNav = navItems.filter((item) => {
-    if (item.adminOnly) return isAdmin;
+    if (item.adminOnly) return isSuperAdmin;
     return true;
   });
 

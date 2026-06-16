@@ -90,20 +90,22 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Grid */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4'>
         {stats.map((stat) => (
-          <div key={stat.label} className='bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5'>
-            <div className='flex items-center justify-between mb-3'>
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.color}`}>
+          <div key={stat.label} className='min-w-0 overflow-hidden bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5'>
+            <div className='flex items-center justify-between gap-2 mb-3'>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${stat.color}`}>
                 <stat.icon className='w-5 h-5' />
               </div>
-              <div className={`flex items-center gap-1 text-xs font-semibold ${stat.up ? 'text-emerald-600' : 'text-red-600'}`}>
+              <div className={`min-w-0 flex items-center gap-1 text-xs font-semibold truncate ${stat.up ? 'text-emerald-600' : 'text-red-600'}`}>
                 {stat.up ? <ArrowUpRight className='w-3.5 h-3.5' /> : <ArrowDownRight className='w-3.5 h-3.5' />}
                 {stat.change}
               </div>
             </div>
-            <p className='text-2xl font-bold text-[#0F172A]'>{stat.label.includes('Bookings') || stat.label.includes('Agents') ? stat.value : formatCurrency(stat.value, currency)}</p>
-            <p className='text-xs text-slate-500 mt-1'>{stat.label}</p>
+            <p className='truncate text-xl 2xl:text-2xl font-bold text-[#0F172A]' title={String(stat.value)}>
+              {stat.label.includes('Bookings') || stat.label.includes('Agents') ? stat.value : formatCurrency(stat.value, currency)}
+            </p>
+            <p className='text-xs leading-snug text-slate-500 mt-1 break-words'>{stat.label}</p>
           </div>
         ))}
       </div>
@@ -134,15 +136,15 @@ export default function DashboardPage() {
           ) : (
             <div className='space-y-4'>
               {bookings.slice(0, 5).map((b) => (
-                <div key={b.id} className='flex items-start gap-3'>
+                <div key={b.id} className='flex flex-col sm:flex-row sm:items-start gap-3'>
                   <div className='w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-700 shrink-0'>
                     <Plane className='w-4 h-4' />
                   </div>
                   <div className='flex-1 min-w-0'>
-                    <p className='text-sm font-semibold text-[#0F172A]'>{b.type} — {b.customer_name}</p>
-                    <p className='text-sm text-slate-500 truncate'>{b.details}</p>
+                    <p className='text-sm font-semibold text-[#0F172A] truncate'>{b.type} — {b.customer_name}</p>
+                    <p className='text-sm text-slate-500 break-words'>{b.details}</p>
                   </div>
-                  <span className='text-xs text-slate-400 shrink-0'>{formatDate(b.created_at)}</span>
+                  <span className='text-xs text-slate-400 shrink-0 sm:text-right'>{formatDate(b.created_at)}</span>
                 </div>
               ))}
             </div>
@@ -152,17 +154,17 @@ export default function DashboardPage() {
         <div className='bg-white rounded-xl border border-slate-200 p-5 shadow-sm'>
           <h3 className='font-bold text-[#0F172A] mb-4'>Quick Actions</h3>
           <div className='space-y-2'>
-            <Link href='/bookings' className='flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl bg-blue-50/50 text-blue-700 text-sm font-medium hover:bg-blue-50 transition-colors'>
-              <Plus className='w-4 h-4' /> New Booking
+            <Link href='/bookings' className='flex items-center gap-3 w-full min-w-0 text-left px-4 py-3 rounded-xl bg-blue-50/50 text-blue-700 text-sm font-medium hover:bg-blue-50 transition-colors'>
+              <Plus className='w-4 h-4 shrink-0' /> <span className='min-w-0 break-words'>New Booking</span>
             </Link>
-            <Link href='/invoices' className='flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl bg-emerald-50/50 text-emerald-700 text-sm font-medium hover:bg-emerald-50 transition-colors'>
-              <FileText className='w-4 h-4' /> Create Invoice
+            <Link href='/invoices' className='flex items-center gap-3 w-full min-w-0 text-left px-4 py-3 rounded-xl bg-emerald-50/50 text-emerald-700 text-sm font-medium hover:bg-emerald-50 transition-colors'>
+              <FileText className='w-4 h-4 shrink-0' /> <span className='min-w-0 break-words'>Create Invoice</span>
             </Link>
-            <Link href='/customers' className='flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl bg-amber-50/50 text-amber-700 text-sm font-medium hover:bg-amber-50 transition-colors'>
-              <Users className='w-4 h-4' /> Add Customer
+            <Link href='/customers' className='flex items-center gap-3 w-full min-w-0 text-left px-4 py-3 rounded-xl bg-amber-50/50 text-amber-700 text-sm font-medium hover:bg-amber-50 transition-colors'>
+              <Users className='w-4 h-4 shrink-0' /> <span className='min-w-0 break-words'>Add Customer</span>
             </Link>
-            <Link href='/reports' className='flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl bg-slate-50 text-[#0F172A] text-sm font-medium hover:bg-slate-100 transition-colors'>
-              <TrendingUp className='w-4 h-4' /> Generate Report
+            <Link href='/reports' className='flex items-center gap-3 w-full min-w-0 text-left px-4 py-3 rounded-xl bg-slate-50 text-[#0F172A] text-sm font-medium hover:bg-slate-100 transition-colors'>
+              <TrendingUp className='w-4 h-4 shrink-0' /> <span className='min-w-0 break-words'>Generate Report</span>
             </Link>
           </div>
         </div>

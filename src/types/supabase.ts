@@ -62,7 +62,7 @@ export interface Database {
           agency_id: string;
           email: string;
           name: string;
-          role: 'owner' | 'admin' | 'manager' | 'agent' | 'accountant' | 'viewer';
+          role: 'super_admin' | 'owner' | 'admin' | 'manager' | 'agent' | 'accountant' | 'viewer';
           active: boolean;
           created_at: string;
         };
@@ -71,7 +71,7 @@ export interface Database {
           agency_id: string;
           email: string;
           name: string;
-          role?: 'owner' | 'admin' | 'manager' | 'agent' | 'accountant' | 'viewer';
+          role?: 'super_admin' | 'owner' | 'admin' | 'manager' | 'agent' | 'accountant' | 'viewer';
           active?: boolean;
           created_at?: string;
         };
@@ -80,7 +80,7 @@ export interface Database {
           agency_id?: string;
           email?: string;
           name?: string;
-          role?: 'owner' | 'admin' | 'manager' | 'agent' | 'accountant' | 'viewer';
+          role?: 'super_admin' | 'owner' | 'admin' | 'manager' | 'agent' | 'accountant' | 'viewer';
           active?: boolean;
           created_at?: string;
         };

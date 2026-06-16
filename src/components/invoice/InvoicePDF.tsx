@@ -2,7 +2,7 @@
 
 import React from 'react';
 import {
-  Document, Page, Text, View, StyleSheet, Font, PDFDownloadLink, pdf
+  Document, Page, Text, View, StyleSheet, Font, pdf
 } from '@react-pdf/renderer';
 import { InvoiceRecord, AgencyBranding } from '@/hooks/useDataStore';
 
@@ -278,7 +278,7 @@ export function InvoiceDocument({ invoice, branding }: { invoice: InvoiceRecord;
               <Text style={[styles.th, styles.colPrice]}>Unit Price</Text>
               <Text style={[styles.th, styles.colTotal]}>Total</Text>
             </View>
-            {invoice.items.map((item, idx) => (
+            {(invoice.items ?? []).map((item, idx) => (
               <View key={idx} style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowAlt : {}]}>
                 <Text style={[styles.td, styles.colDesc]}>{item.description}</Text>
                 <Text style={[styles.td, styles.colQty]}>{item.quantity}</Text>
