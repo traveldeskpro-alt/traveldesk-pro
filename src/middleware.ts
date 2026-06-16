@@ -61,14 +61,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl);
   }
 
-  if (user && pathname.startsWith('/admin')) {
+  const isSaasAdminPath = pathname.startsWith('/admin') || pathname.startsWith('/saas-admin');
+  if (user && isSaasAdminPath) {
     const { data: profile } = await supabase
       .from('users')
-      .select('role')
+      .select('role,active')
       .eq('id', user.id)
       .maybeSingle();
 
-    if (profile?.role !== 'super_admin') {
+    if (profile?.role !== 'super_admin' || !profile?.active) {
       const dashboardUrl = new URL('/dashboard', request.url);
       return NextResponse.redirect(dashboardUrl);
     }

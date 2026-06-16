@@ -341,12 +341,126 @@ export interface Database {
           created_at?: string;
         };
       };
+      subscription_plans: {
+        Row: {
+          id: 'starter' | 'professional' | 'enterprise';
+          name: string;
+          monthly_price: number;
+          user_limit: number | null;
+          booking_limit: number | null;
+          features: string[];
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: 'starter' | 'professional' | 'enterprise';
+          name: string;
+          monthly_price: number;
+          user_limit?: number | null;
+          booking_limit?: number | null;
+          features?: string[];
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: 'starter' | 'professional' | 'enterprise';
+          name?: string;
+          monthly_price?: number;
+          user_limit?: number | null;
+          booking_limit?: number | null;
+          features?: string[];
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      audit_logs: {
+        Row: {
+          id: string;
+          created_at: string;
+          admin_user_id: string | null;
+          admin_email: string;
+          action: string;
+          target_agency_id: string | null;
+          target_agency_name: string | null;
+          notes: string | null;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          admin_user_id?: string | null;
+          admin_email: string;
+          action: string;
+          target_agency_id?: string | null;
+          target_agency_name?: string | null;
+          notes?: string | null;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          admin_user_id?: string | null;
+          admin_email?: string;
+          action?: string;
+          target_agency_id?: string | null;
+          target_agency_name?: string | null;
+          notes?: string | null;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      saas_admin_activate_agency: {
+        Args: { p_agency_id: string; p_notes?: string | null };
+        Returns: Database['public']['Tables']['agencies']['Row'];
+      };
+      saas_admin_change_agency_plan: {
+        Args: { p_agency_id: string; p_plan_id: string; p_notes?: string | null };
+        Returns: Database['public']['Tables']['agencies']['Row'];
+      };
+      saas_admin_delete_agency: {
+        Args: { p_agency_id: string; p_notes?: string | null };
+        Returns: void;
+      };
+      saas_admin_log_action: {
+        Args: {
+          p_action: string;
+          p_target_agency_id?: string | null;
+          p_target_agency_name?: string | null;
+          p_notes?: string | null;
+        };
+        Returns: string;
+      };
+      saas_admin_suspend_agency: {
+        Args: { p_agency_id: string; p_notes?: string | null };
+        Returns: Database['public']['Tables']['agencies']['Row'];
+      };
+      saas_admin_update_agency: {
+        Args: {
+          p_agency_id: string;
+          p_name: string;
+          p_email: string;
+          p_phone: string;
+          p_status: string;
+          p_notes?: string | null;
+        };
+        Returns: Database['public']['Tables']['agencies']['Row'];
+      };
+      saas_admin_update_subscription_plan: {
+        Args: {
+          p_plan_id: string;
+          p_name: string;
+          p_monthly_price: number;
+          p_user_limit: number | null;
+          p_booking_limit: number | null;
+          p_features: string[];
+          p_notes?: string | null;
+        };
+        Returns: Database['public']['Tables']['subscription_plans']['Row'];
+      };
     };
     Enums: {
       [_ in never]: never;

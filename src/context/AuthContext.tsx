@@ -119,6 +119,9 @@ async function fetchProfile(sb: NonNullable<typeof supabase>, userId: string) {
   if (!profile) {
     throw new Error("Your account profile could not be found.");
   }
+  if (!profile.active) {
+    throw new Error("Your account is inactive.");
+  }
 
   const user: User = {
     id: profile.id,
@@ -145,6 +148,9 @@ async function fetchProfile(sb: NonNullable<typeof supabase>, userId: string) {
   if (agencyError) throw agencyError;
   if (!agency) {
     throw new Error("Your agency profile could not be loaded.");
+  }
+  if (agency.status === "suspended") {
+    throw new Error("Your agency account is suspended.");
   }
 
   return { user, agency: mapAgency(agency) };
