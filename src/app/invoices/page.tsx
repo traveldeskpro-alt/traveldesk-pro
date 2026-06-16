@@ -15,10 +15,6 @@ import { openWhatsAppWeb, buildMessage, getInvoiceWhatsAppVars } from '@/lib/wha
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
-function generateId() {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-}
-
 function toDateInputValue(date: Date) {
   return date.toISOString().split('T')[0];
 }
