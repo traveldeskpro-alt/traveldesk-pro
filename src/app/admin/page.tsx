@@ -1,52 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { formatCurrency, formatDate, getInitials } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import { formatDate, getInitials } from "@/lib/utils";
 import {
   Building2,
-  Users,
-  CreditCard,
-  Shield,
-  AlertTriangle,
   CheckCircle,
   XCircle,
   Search,
-  ArrowUpRight,
-  TrendingUp,
   Activity,
-  DollarSign,
-  FileText,
-  RefreshCw,
   Lock,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 
-const mockAgencies = [
-  { id: "AG-001", name: "TravelDesk Pro Demo Agency", email: "demo@traveldeskpro.app", phone: "+968 1234 5678", plan: "professional", status: "active", users: 8, bookings: 342, revenue: 85400, createdAt: "2023-01-15" },
-  { id: "AG-002", name: "Muscat Holidays", email: "hello@muscat.om", phone: "+968 8765 4321", plan: "starter", status: "active", users: 3, bookings: 98, revenue: 24100, createdAt: "2023-04-10" },
-  { id: "AG-003", name: "Desert Rose Tours", email: "contact@desertrose.om", phone: "+968 9999 0000", plan: "enterprise", status: "suspended", users: 15, bookings: 1200, revenue: 312000, createdAt: "2022-11-20" },
-  { id: "AG-004", name: "Pearl Travel", email: "book@pearl.om", phone: "+968 7777 8888", plan: "professional", status: "trial", users: 6, bookings: 210, revenue: 56700, createdAt: "2024-02-01" },
-  { id: "AG-005", name: "Oman Express", email: "support@omanexpress.om", phone: "+968 6666 5555", plan: "starter", status: "active", users: 2, bookings: 45, revenue: 11200, createdAt: "2024-05-15" },
-];
-
-const auditLogs = [
-  { id: 1, user: "System", action: "Agency AG-003 suspended", entity: "Desert Rose Tours", time: "2 hours ago", type: "warning" },
-  { id: 2, user: "Admin", action: "New plan assigned", entity: "Muscat Holidays → Professional", time: "5 hours ago", type: "success" },
-  { id: 3, user: "System", action: "Payment failed", entity: "Pearl Travel", time: "1 day ago", type: "error" },
-  { id: 4, user: "Admin", action: "Agency created", entity: "Oman Express", time: "2 days ago", type: "success" },
-  { id: 5, user: "System", action: "Backup completed", entity: "All agencies", time: "3 days ago", type: "info" },
-];
+type AgencyRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  plan: "starter" | "professional" | "enterprise";
+  status: "active" | "trial" | "suspended";
+  created_at: string;
+};
 
 export default function AdminPage() {
-  const { user } = useAuth();
+  const { user, agency } = useAuth();
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("agencies");
+  const [agencies, setAgencies] = useState<AgencyRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const isAdmin = user?.role === "owner" || user?.role === "admin";
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAgencies() {
+      if (!isAdmin) return;
+      setLoading(true);
+      setLoadError(null);
+
+      if (!supabase) {
+        if (agency && !cancelled) {
+          setAgencies([{
+            id: agency.id,
+            name: agency.name,
+            email: agency.email,
+            phone: agency.phone,
+            plan: agency.plan as AgencyRow["plan"],
+            status: agency.status as AgencyRow["status"],
+            created_at: agency.createdAt,
+          }]);
+        }
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("agencies")
+        .select("id,name,email,phone,plan,status,created_at")
+        .order("created_at", { ascending: false });
+
+      if (cancelled) return;
+      if (error) {
+        setLoadError(error.message);
+        setAgencies([]);
+      } else {
+        setAgencies((data || []) as AgencyRow[]);
+      }
+      setLoading(false);
+    }
+
+    loadAgencies();
+    return () => { cancelled = true; };
+  }, [agency, isAdmin]);
 
   if (!isAdmin) {
     return (
@@ -60,15 +91,15 @@ export default function AdminPage() {
     );
   }
 
-  const filtered = mockAgencies.filter((a) =>
+  const filtered = agencies.filter((a) =>
     a.name.toLowerCase().includes(search.toLowerCase()) ||
     a.id.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalRevenue = filtered.reduce((a, b) => a + b.revenue, 0);
   const totalAgencies = filtered.length;
-  const totalUsers = filtered.reduce((a, b) => a + b.users, 0);
-  const totalBookings = filtered.reduce((a, b) => a + b.bookings, 0);
+  const activeAgencies = filtered.filter((a) => a.status === "active").length;
+  const trialAgencies = filtered.filter((a) => a.status === "trial").length;
+  const suspendedAgencies = filtered.filter((a) => a.status === "suspended").length;
 
   return (
     <div className="space-y-6">
@@ -83,16 +114,16 @@ export default function AdminPage() {
           <div><p className="text-sm text-slate-500">Agencies</p><p className="text-xl font-bold text-navy">{totalAgencies}</p></div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center"><Users className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Total Users</p><p className="text-xl font-bold text-navy">{totalUsers}</p></div>
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center"><CheckCircle className="w-6 h-6" /></div>
+          <div><p className="text-sm text-slate-500">Active</p><p className="text-xl font-bold text-navy">{activeAgencies}</p></div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center"><TrendingUp className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Total Bookings</p><p className="text-xl font-bold text-navy">{totalBookings.toLocaleString()}</p></div>
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center"><Activity className="w-6 h-6" /></div>
+          <div><p className="text-sm text-slate-500">Trial</p><p className="text-xl font-bold text-navy">{trialAgencies}</p></div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center"><DollarSign className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Total Revenue</p><p className="text-xl font-bold text-navy">{formatCurrency(totalRevenue, "OMR")}</p></div>
+          <div className="w-12 h-12 rounded-xl bg-red-50 text-red-700 flex items-center justify-center"><XCircle className="w-6 h-6" /></div>
+          <div><p className="text-sm text-slate-500">Suspended</p><p className="text-xl font-bold text-navy">{suspendedAgencies}</p></div>
         </div>
       </div>
 
@@ -122,16 +153,19 @@ export default function AdminPage() {
 
         {activeTab === "agencies" && (
           <div className="overflow-x-auto">
+            {loadError && (
+              <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                Could not load agencies: {loadError}
+              </div>
+            )}
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-500 text-xs uppercase tracking-wider">
                   <th className="px-4 py-3 text-left font-medium">Agency</th>
                   <th className="px-4 py-3 text-left font-medium">Plan</th>
-                  <th className="px-4 py-3 text-left font-medium">Users</th>
-                  <th className="px-4 py-3 text-left font-medium">Bookings</th>
-                  <th className="px-4 py-3 text-left font-medium">Revenue</th>
+                  <th className="px-4 py-3 text-left font-medium">Phone</th>
+                  <th className="px-4 py-3 text-left font-medium">Created</th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
-                  <th className="px-4 py-3 text-left font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -155,9 +189,8 @@ export default function AdminPage() {
                         {a.plan}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{a.users}</td>
-                    <td className="px-4 py-3 text-slate-700">{a.bookings.toLocaleString()}</td>
-                    <td className="px-4 py-3 font-medium text-slate-900">{formatCurrency(a.revenue, "OMR")}</td>
+                    <td className="px-4 py-3 text-slate-700">{a.phone || "-"}</td>
+                    <td className="px-4 py-3 text-slate-700">{formatDate(a.created_at)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
                         a.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
@@ -168,19 +201,18 @@ export default function AdminPage() {
                         {a.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <button className="p-1.5 rounded hover:bg-slate-100 text-slate-600" title="Reset"><RefreshCw className="w-4 h-4" /></button>
-                        <button className="p-1.5 rounded hover:bg-slate-100 text-slate-600" title="Edit"><FileText className="w-4 h-4" /></button>
-                        {a.status === "active" ? (
-                          <button className="p-1.5 rounded hover:bg-red-50 text-red-600" title="Suspend"><XCircle className="w-4 h-4" /></button>
-                        ) : (
-                          <button className="p-1.5 rounded hover:bg-emerald-50 text-emerald-600" title="Activate"><CheckCircle className="w-4 h-4" /></button>
-                        )}
-                      </div>
-                    </td>
                   </tr>
                 ))}
+                {!loading && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">No agencies found.</td>
+                  </tr>
+                )}
+                {loading && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">Loading agencies...</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -188,23 +220,9 @@ export default function AdminPage() {
 
         {activeTab === "audit" && (
           <div className="p-4 space-y-3">
-            {auditLogs.map((log) => (
-              <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                  log.type === "warning" ? "bg-amber-50 text-amber-700" :
-                  log.type === "error" ? "bg-red-50 text-red-700" :
-                  log.type === "success" ? "bg-emerald-50 text-emerald-700" :
-                  "bg-blue-50 text-blue-700"
-                }`}>
-                  <Activity className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900">{log.action}</p>
-                  <p className="text-xs text-slate-500">{log.entity} · by {log.user}</p>
-                </div>
-                <span className="text-xs text-slate-400 shrink-0">{log.time}</span>
-              </div>
-            ))}
+            <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+              Audit logs are not connected yet.
+            </div>
           </div>
         )}
 

@@ -48,6 +48,17 @@ function generateId() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+function normalizeTimestamp(value: string | undefined, fieldName: string) {
+  if (!value) {
+    throw new Error(`${fieldName} is required.`);
+  }
+  const parsed = value.includes('T') ? new Date(value) : new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`${fieldName} is invalid.`);
+  }
+  return parsed.toISOString();
+}
+
 const isSupabaseEnabled = !!supabase;
 
 // ========== INVOICE SETTINGS ==========
@@ -544,10 +555,18 @@ export function useInvoices() {
   }, [agencyId, useLocalStorage]);
 
   const create = useCallback(async (data: Omit<InvoiceRecord, 'id' | 'agency_id' | 'created_at'>) => {
+    const issuedAt = normalizeTimestamp(data.issued_at, 'Issue date');
+    const dueDate = normalizeTimestamp(data.due_date, 'Due date');
+    if (new Date(dueDate) < new Date(issuedAt)) {
+      throw new Error('Due date cannot be before the issue date.');
+    }
+
     const newRecord: InvoiceRecord = {
       id: crypto?.randomUUID ? crypto.randomUUID() : generateId(),
       agency_id: agencyId,
       ...data,
+      issued_at: issuedAt,
+      due_date: dueDate,
       created_at: new Date().toISOString(),
     };
     if (!useLocalStorage && isSupabaseEnabled && supabase) {

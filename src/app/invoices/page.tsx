@@ -6,7 +6,6 @@ import { usePermissions } from '@/hooks/useDataStore';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useDataMode } from '@/context/DataModeContext';
-import { supabase } from '@/lib/supabase';
 import { Search, Plus, X, Save, Printer, Download, MessageCircle, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Send, Smartphone } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { CURRENCIES, getCurrencySymbol, INVOICE_STATUS_COLORS, WHATSAPP_TEMPLATES } from '@/lib/constants';
@@ -16,8 +15,25 @@ import { openWhatsAppWeb, buildMessage, getInvoiceWhatsAppVars } from '@/lib/wha
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
-function generateId() {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+function toDateInputValue(date: Date) {
+  return date.toISOString().split('T')[0];
+}
+
+function getDefaultDueDate() {
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + 30);
+  return toDateInputValue(dueDate);
+}
+
+function parseDateInput(value: string, fieldName: string) {
+  if (!value) {
+    throw new Error(`${fieldName} is required.`);
+  }
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`${fieldName} is invalid.`);
+  }
+  return parsed;
 }
 
 export default function InvoicesPage() {
@@ -39,11 +55,6 @@ export default function InvoicesPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // ── DEBUG STATE (remove after confirming Supabase insert works) ──
-  const [debugLastPayload, setDebugLastPayload] = useState<object | null>(null);
-  const [debugLastResult, setDebugLastResult] = useState<string | null>(null);
-  const [testRunning, setTestRunning] = useState(false);
-
   const [form, setForm] = useState({
     customer_id: '',
     customer_name: '',
@@ -61,8 +72,8 @@ export default function InvoicesPage() {
     total: 0,
     currency: invoiceSettings.defaultCurrency,
     status: 'pending' as 'paid' | 'pending' | 'refund' | 'overdue',
-    issued_at: new Date().toISOString().split('T')[0],
-    due_date: '',
+    issued_at: toDateInputValue(new Date()),
+    due_date: getDefaultDueDate(),
     notes: invoiceSettings.defaultNotes,
   });
 
@@ -130,8 +141,8 @@ export default function InvoicesPage() {
       total: 0,
       currency: invoiceSettings.defaultCurrency,
       status: 'pending',
-      issued_at: new Date().toISOString().split('T')[0],
-      due_date: '',
+      issued_at: toDateInputValue(new Date()),
+      due_date: getDefaultDueDate(),
       notes: invoiceSettings.defaultNotes,
     });
     setSaveError(null);
@@ -140,61 +151,18 @@ export default function InvoicesPage() {
 
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  // ── DEBUG: direct Supabase test insert (bypasses hook) ──
-  const runTestInsert = async () => {
-    setDebugLastResult(null);
-    setTestRunning(true);
-    if (!supabase) {
-      setDebugLastResult('ERROR: supabase client is null — env vars missing');
-      setTestRunning(false);
-      return;
-    }
-    if (!form.customer_id || !UUID_RE.test(form.customer_id)) {
-      setDebugLastResult('ERROR: no valid customer_id selected. Pick a customer in the form first.');
-      setTestRunning(false);
-      return;
-    }
-    if (!user?.agencyId || !UUID_RE.test(user.agencyId)) {
-      setDebugLastResult(`ERROR: user.agencyId is invalid: "${user?.agencyId}"`);
-      setTestRunning(false);
-      return;
-    }
-    const testPayload = {
-      id: crypto.randomUUID(),
-      agency_id: user.agencyId,
-      customer_id: form.customer_id,
-      customer_name: form.customer_name || 'Debug Test',
-      invoice_number: `DEBUG-${Date.now()}`,
-      items: [] as object[],
-      subtotal: 0,
-      tax: 0,
-      total: 1,
-      currency: 'OMR',
-      status: 'pending' as const,
-      issued_at: new Date().toISOString(),
-      due_date: new Date().toISOString(),
-      paid_at: null,
-      created_at: new Date().toISOString(),
-    };
-    setDebugLastPayload(testPayload);
-    const { data, error } = await supabase.from('invoices').insert(testPayload).select().single();
-    if (error) {
-      setDebugLastResult(`SUPABASE ERROR — code: ${error.code} | message: ${error.message} | details: ${error.details} | hint: ${error.hint}`);
-    } else {
-      setDebugLastResult(`SUCCESS — inserted row id: ${data?.id}`);
-    }
-    setTestRunning(false);
-  };
-
   const handleSave = async () => {
     setSaveError(null);
-    setDebugLastResult(null);
 
-    if (!form.customer_id || !UUID_RE.test(form.customer_id)) {
+    if (!form.customer_id) {
       setSaveError('Please select a customer from the dropdown before saving.');
       return;
     }
-    if (!user?.agencyId || !UUID_RE.test(user.agencyId)) {
+    if (!useLocalStorage && !UUID_RE.test(form.customer_id)) {
+      setSaveError('Please select a valid customer from the dropdown before saving.');
+      return;
+    }
+    if (!user?.agencyId || (!useLocalStorage && !UUID_RE.test(user.agencyId))) {
       setSaveError('Your agency account is not properly set up. Please log out and log in again.');
       return;
     }
@@ -203,23 +171,14 @@ export default function InvoicesPage() {
       return;
     }
 
-    const capturedPayload = {
-      agency_id: user.agencyId,
-      customer_id: form.customer_id,
-      customer_name: form.customer_name,
-      invoice_number: form.invoice_number,
-      subtotal: form.subtotal,
-      tax: form.tax,
-      total: form.total,
-      currency: form.currency,
-      status: form.status,
-      issued_at: form.issued_at,
-      due_date: form.due_date,
-    };
-    setDebugLastPayload(capturedPayload);
-
     setSaving(true);
     try {
+      const issuedAt = parseDateInput(form.issued_at, 'Issue date');
+      const dueDate = parseDateInput(form.due_date, 'Due date');
+      if (dueDate < issuedAt) {
+        throw new Error('Due date cannot be before the issue date.');
+      }
+
       await create({
         customer_id: form.customer_id,
         customer_name: form.customer_name,
@@ -238,8 +197,8 @@ export default function InvoicesPage() {
         total: form.total,
         currency: form.currency,
         status: form.status,
-        issued_at: form.issued_at,
-        due_date: form.due_date,
+        issued_at: issuedAt.toISOString(),
+        due_date: dueDate.toISOString(),
         notes: form.notes,
         agency_branding: {
           logo_url: branding.logoUrl || agency?.logoUrl,
@@ -257,12 +216,10 @@ export default function InvoicesPage() {
           swift_code: branding.swiftCode,
         },
       });
-      setDebugLastResult('handleSave SUCCESS — modal closed');
       setShowModal(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : (err as any)?.message ?? 'Failed to save invoice. Please try again.';
       setSaveError(msg);
-      setDebugLastResult(`handleSave THREW: ${msg}`);
     } finally {
       setSaving(false);
     }
@@ -325,39 +282,6 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      {/* ── DEBUG PANEL (invoice-fix-v2) — remove after Supabase insert confirmed ── */}
-      <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-4 font-mono text-xs space-y-2">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="font-bold text-amber-800 text-sm">🔧 DEBUG PANEL — invoice-fix-v2</span>
-          <button
-            onClick={runTestInsert}
-            disabled={testRunning}
-            className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold disabled:opacity-50"
-          >
-            {testRunning ? 'Testing…' : '⚡ Test Supabase Invoice Insert'}
-          </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-amber-900">
-          <div><span className="text-amber-600">build:</span> invoice-fix-v2</div>
-          <div><span className="text-amber-600">useLocalStorage:</span> {String(useLocalStorage)}</div>
-          <div><span className="text-amber-600">supabase configured:</span> {supabase ? 'YES ✅' : 'NO ❌ (env vars missing)'}</div>
-          <div><span className="text-amber-600">user.agencyId:</span> {user?.agencyId ?? 'null ❌'}</div>
-          <div className="sm:col-span-2"><span className="text-amber-600">selected customer_id:</span> {form.customer_id || '(none — select customer first)'}</div>
-        </div>
-        {debugLastPayload && (
-          <div>
-            <div className="text-amber-600 font-semibold">Last insert payload:</div>
-            <pre className="bg-amber-100 rounded p-2 overflow-x-auto text-amber-900 text-xs">{JSON.stringify(debugLastPayload, null, 2)}</pre>
-          </div>
-        )}
-        {debugLastResult && (
-          <div className={`rounded p-2 font-semibold ${debugLastResult.startsWith('SUCCESS') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {debugLastResult}
-          </div>
-        )}
-      </div>
-      {/* ── END DEBUG PANEL ── */}
-
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#0F172A]">Invoices</h1>
