@@ -149,9 +149,6 @@ async function fetchProfile(sb: NonNullable<typeof supabase>, userId: string) {
   if (!agency) {
     throw new Error("Your agency profile could not be loaded.");
   }
-  if (agency.status === "suspended") {
-    throw new Error("Your agency account is suspended.");
-  }
 
   return { user, agency: mapAgency(agency) };
 }

@@ -25,6 +25,7 @@ import {
   Sun,
   Moon,
   Plane,
+  AlertTriangle,
 } from "lucide-react";
 
 const navItems = (t: (k: string) => string) => [
@@ -40,7 +41,7 @@ const navItems = (t: (k: string) => string) => [
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { user, agency, logout, isAuthenticated, isLoading } = useAuth();
   const { language, setLanguage, t, dir, isRTL } = useLanguage();
   const { isDark, toggleDark } = useDarkMode();
   const pathname = usePathname();
@@ -87,6 +88,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+
+  const isSuspendedAgency = user?.role !== "super_admin" && agency?.status === "suspended";
 
   return (
     <div className="h-screen overflow-hidden flex bg-[var(--page-bg)] transition-colors duration-300">
@@ -272,7 +275,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-8 travel-bg">
-          {children}
+          {isSuspendedAgency ? (
+            <div className="min-h-full flex items-center justify-center">
+              <div className="max-w-lg rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                  <AlertTriangle className="h-7 w-7" />
+                </div>
+                <h1 className="text-2xl font-bold text-navy">Subscription Suspended</h1>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Your agency subscription is currently suspended. Please contact TravelDesk Pro support to reactivate access.
+                </p>
+                <button
+                  onClick={logout}
+                  className="mt-6 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          ) : children}
         </main>
       </div>
     </div>

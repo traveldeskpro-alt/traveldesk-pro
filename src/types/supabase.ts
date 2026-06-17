@@ -434,6 +434,10 @@ export interface Database {
         };
         Returns: string;
       };
+      saas_admin_set_agency_status: {
+        Args: { p_agency_id: string; p_status: string; p_notes?: string | null };
+        Returns: Database['public']['Tables']['agencies']['Row'];
+      };
       saas_admin_suspend_agency: {
         Args: { p_agency_id: string; p_notes?: string | null };
         Returns: Database['public']['Tables']['agencies']['Row'];
