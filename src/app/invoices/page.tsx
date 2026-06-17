@@ -232,6 +232,7 @@ export default function InvoicesPage() {
 
   const getPdfBranding = (invoice: typeof invoices[0]) => ({
     ...branding,
+    logoUrl: invoice.agency_branding?.logo_url || branding.logoUrl || agency?.logoUrl || '',
     name: invoice.agency_branding?.name || branding.name || agency?.name || 'TravelDesk Pro',
     address: invoice.agency_branding?.address || branding.address || agency?.address || '',
     phone: invoice.agency_branding?.phone || branding.phone || agency?.phone || '',
@@ -434,7 +435,7 @@ export default function InvoicesPage() {
                           <button onClick={() => setShowDetail(inv)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-brand transition-colors" title="View & Download">
                             <Download className="w-4 h-4" />
                           </button>
-                          <button onClick={() => setShowWhatsApp(inv)} className="p-2 hover:bg-emerald-50 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors" title="Send WhatsApp">
+                          <button onClick={() => setShowWhatsApp(inv)} className="p-2 hover:bg-emerald-50 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors" title="Open WhatsApp Web">
                             <MessageCircle className="w-4 h-4" />
                           </button>
                           <button onClick={() => handleStatus(inv.id, inv.status === 'paid' ? 'pending' : 'paid')} className="p-2 hover:bg-emerald-50 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors" title={inv.status === 'paid' ? 'Mark Pending' : 'Mark Paid'}>
@@ -672,7 +673,11 @@ export default function InvoicesPage() {
             <div className="p-8">
               <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <div className="flex flex-col md:flex-row justify-between p-6 border-b border-slate-100 bg-slate-50/30">
-                  <div className="mb-4 md:mb-0">
+                  <div className="mb-4 md:mb-0 flex items-start gap-4">
+                    {(showDetail.agency_branding?.logo_url || branding.logoUrl || agency?.logoUrl) && (
+                      <img src={showDetail.agency_branding?.logo_url || branding.logoUrl || agency?.logoUrl} alt="Agency logo" className="h-14 w-14 rounded-lg border border-slate-200 bg-white object-contain p-1" />
+                    )}
+                    <div>
                     <div className="text-xl font-bold text-[#0F172A] mb-1">{showDetail.agency_branding?.name || branding.name || agency?.name || 'TravelDesk Pro'}</div>
                     <div className="text-xs text-slate-500 leading-relaxed">
                       {(showDetail.agency_branding?.address || branding.address || agency?.address) && <div>{showDetail.agency_branding?.address || branding.address || agency?.address}</div>}
@@ -681,6 +686,7 @@ export default function InvoicesPage() {
                       {(showDetail.agency_branding?.website || branding.website) && <div>Web: {showDetail.agency_branding?.website || branding.website}</div>}
                       {(showDetail.agency_branding?.cr_number || branding.crNumber) && <div>CR: {showDetail.agency_branding?.cr_number || branding.crNumber}</div>}
                       {(showDetail.agency_branding?.vat_number || branding.vatNumber) && <div>VAT: {showDetail.agency_branding?.vat_number || branding.vatNumber}</div>}
+                    </div>
                     </div>
                   </div>
                   <div className="bg-white border border-slate-200 rounded-xl p-5 min-w-[220px] shadow-sm">
@@ -787,9 +793,9 @@ export default function InvoicesPage() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
-                  <Smartphone className="w-5 h-5 text-emerald-500" /> Share via WhatsApp
+                  <Smartphone className="w-5 h-5 text-emerald-500" /> Share via WhatsApp Web
                 </h2>
-                <p className="text-xs text-slate-500 mt-1">Opens wa.me with a pre-filled invoice message.</p>
+                <p className="text-xs text-slate-500 mt-1">WhatsApp Business API send is Coming Soon.</p>
               </div>
               <button onClick={() => setShowWhatsApp(null)} className="p-2 hover:bg-slate-100 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
             </div>
@@ -798,24 +804,13 @@ export default function InvoicesPage() {
               <button onClick={() => sendWhatsApp('invoice_message')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 hover:bg-emerald-50 hover:border-emerald-200 transition-colors text-left">
                 <Send className="w-4 h-4 text-emerald-500" />
                 <div>
-                  <div className="text-sm font-medium text-[#0F172A]">Send Invoice</div>
-                  <div className="text-xs text-slate-500">Send invoice details and amount</div>
+                  <div className="text-sm font-medium text-[#0F172A]">Open WhatsApp Web</div>
+                  <div className="text-xs text-slate-500">Prefill invoice details and amount</div>
                 </div>
               </button>
-              <button onClick={() => sendWhatsApp('payment_reminder')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 hover:bg-emerald-50 hover:border-emerald-200 transition-colors text-left">
-                <Clock className="w-4 h-4 text-amber-500" />
-                <div>
-                  <div className="text-sm font-medium text-[#0F172A]">Payment Reminder</div>
-                  <div className="text-xs text-slate-500">Remind about pending payment</div>
-                </div>
-              </button>
-              <button onClick={() => sendWhatsApp('thank_you')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 hover:bg-emerald-50 hover:border-emerald-200 transition-colors text-left">
-                <CheckCircle className="w-4 h-4 text-blue-500" />
-                <div>
-                  <div className="text-sm font-medium text-[#0F172A]">Thank You</div>
-                  <div className="text-xs text-slate-500">Send appreciation message</div>
-                </div>
-              </button>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                Direct WhatsApp Business API actions are Coming Soon and are hidden from production until connected.
+              </div>
             </div>
           </div>
         </div>

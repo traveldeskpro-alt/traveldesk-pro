@@ -168,6 +168,7 @@ export function useAgencyBranding(): { branding: AgencyBranding; update: (partia
   const { agency } = useAuth();
   const agencyId = agency?.id || 'demo';
   const [branding, setBranding] = useState<AgencyBranding>({
+    logoUrl: agency?.logoUrl || '',
     name: agency?.name || 'TravelDesk Pro',
     address: agency?.address || 'Muscat, Oman',
     phone: agency?.phone || '',
@@ -189,6 +190,7 @@ export function useAgencyBranding(): { branding: AgencyBranding; update: (partia
     } else if (agency) {
       setBranding({
         name: agency.name || '',
+        logoUrl: agency.logoUrl || '',
         address: agency.address || '',
         phone: agency.phone || '',
         email: agency.email || '',
@@ -213,6 +215,107 @@ export function useAgencyBranding(): { branding: AgencyBranding; update: (partia
   }, [agencyId]);
 
   return { branding, update };
+}
+
+// ========== CALENDAR EVENTS ==========
+export interface CalendarEventRecord {
+  id: string;
+  agency_id: string;
+  title: string;
+  description?: string | null;
+  start_at: string;
+  end_at?: string | null;
+  type: 'meeting' | 'deadline' | 'reminder' | 'travel' | 'booking';
+  customer_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useCalendarEvents() {
+  const { user } = useAuth();
+  const { useLocalStorage } = useDataMode();
+  const agencyId = user?.agencyId || (useLocalStorage ? 'demo' : '');
+  const [events, setEvents] = useState<CalendarEventRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!agencyId) {
+      setEvents([]);
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      supabase
+        .from('calendar_events')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .order('start_at', { ascending: true })
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          if (!error && data) setEvents(data as CalendarEventRecord[]);
+          setLoading(false);
+        });
+    } else {
+      setEvents(loadTable<CalendarEventRecord>(agencyId, 'calendar_events'));
+      setLoading(false);
+    }
+    return () => { cancelled = true; };
+  }, [agencyId, useLocalStorage]);
+
+  const create = useCallback(async (data: Omit<CalendarEventRecord, 'id' | 'agency_id' | 'created_at' | 'updated_at'>) => {
+    if (!agencyId) throw new Error('An agency account is required to create calendar events.');
+    const now = new Date().toISOString();
+    const newRecord: CalendarEventRecord = {
+      id: crypto?.randomUUID ? crypto.randomUUID() : generateId(),
+      agency_id: agencyId,
+      ...data,
+      created_at: now,
+      updated_at: now,
+    };
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      const { data: inserted, error } = await supabase.from('calendar_events').insert(newRecord).select().single();
+      if (error) throw new Error(error.message);
+      if (!inserted) throw new Error('Calendar event insert returned no data.');
+      setEvents((prev) => [...prev, inserted as CalendarEventRecord].sort((a, b) => a.start_at.localeCompare(b.start_at)));
+      return inserted as CalendarEventRecord;
+    }
+    setEvents((prev) => {
+      const updated = [...prev, newRecord].sort((a, b) => a.start_at.localeCompare(b.start_at));
+      saveTable(agencyId, 'calendar_events', updated);
+      return updated;
+    });
+    return newRecord;
+  }, [agencyId, useLocalStorage]);
+
+  const update = useCallback(async (id: string, data: Partial<Omit<CalendarEventRecord, 'id' | 'agency_id' | 'created_at'>>) => {
+    const updateData = { ...data, updated_at: new Date().toISOString() };
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      const { error } = await supabase.from('calendar_events').update(updateData).eq('id', id);
+      if (error) throw new Error(error.message);
+    }
+    setEvents((prev) => {
+      const updated = prev
+        .map((event) => (event.id === id ? { ...event, ...updateData } : event))
+        .sort((a, b) => a.start_at.localeCompare(b.start_at));
+      if (useLocalStorage || !isSupabaseEnabled) saveTable(agencyId, 'calendar_events', updated);
+      return updated;
+    });
+  }, [agencyId, useLocalStorage]);
+
+  const remove = useCallback(async (id: string) => {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      const { error } = await supabase.from('calendar_events').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+    }
+    setEvents((prev) => {
+      const updated = prev.filter((event) => event.id !== id);
+      if (useLocalStorage || !isSupabaseEnabled) saveTable(agencyId, 'calendar_events', updated);
+      return updated;
+    });
+  }, [agencyId, useLocalStorage]);
+
+  return { events, loading, create, update, remove };
 }
 
 // ========== CUSTOMERS ==========
@@ -610,6 +713,7 @@ export function useInvoices() {
         issued_at: newRecord.issued_at,
         due_date: newRecord.due_date,
         paid_at: newRecord.paid_at ?? null,
+        agency_branding: newRecord.agency_branding ?? null,
         created_at: newRecord.created_at,
       };
       const { data: inserted, error } = await supabase.from('invoices').insert(insertPayload).select().single();

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useDataMode } from "@/context/DataModeContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { useWhatsAppSettings } from "@/hooks/useDataStore";
+import { useAgencyBranding, useWhatsAppSettings } from "@/hooks/useDataStore";
 import { supabase } from "@/lib/supabase";
-import { CURRENCIES, SUBSCRIPTION_PLANS } from "@/lib/constants";
+import { CURRENCIES, ROLES, SUBSCRIPTION_PLANS } from "@/lib/constants";
 import {
   Building2,
   Users,
@@ -25,6 +26,10 @@ import {
   MessageCircle,
   Database,
   Trash2,
+  Edit2,
+  X,
+  UserPlus,
+  AlertCircle,
 } from "lucide-react";
 
 const tabs = [
@@ -58,16 +63,45 @@ type SettingsUser = {
   active: boolean;
 };
 
+type SubscriptionPlanView = {
+  id: "starter" | "professional" | "enterprise";
+  name: string;
+  priceOmr: number;
+  maxUsers: number | null;
+  maxBookings: number | null;
+  features: string[];
+  isActive: boolean;
+};
+
+const editableRoles = ROLES.filter((role) => role.id !== "super_admin");
+
 export default function SettingsPage() {
   const { user, agency, refreshProfile, updatePassword } = useAuth();
+  const { useLocalStorage } = useDataMode();
   const { t, setLanguage } = useLanguage();
+  const { update: updateBranding } = useAgencyBranding();
   const { settings: whatsappSettings, update: updateWhatsAppSettings } = useWhatsAppSettings();
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
   const [activeTab, setActiveTab] = useState("general");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [users, setUsers] = useState<SettingsUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<SettingsUser | null>(null);
+  const [userSaving, setUserSaving] = useState(false);
+  const [userMessage, setUserMessage] = useState<string | null>(null);
+  const [userError, setUserError] = useState<string | null>(null);
+  const [userForm, setUserForm] = useState({ name: "", email: "", role: "viewer", active: true });
+  const [plans, setPlans] = useState<SubscriptionPlanView[]>(SUBSCRIPTION_PLANS as SubscriptionPlanView[]);
+  const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlanView["id"]>("starter");
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [subscriptionSaving, setSubscriptionSaving] = useState<string | null>(null);
+  const [subscriptionMessage, setSubscriptionMessage] = useState<string | null>(null);
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState(defaultNotifications);
   const [notificationsSaved, setNotificationsSaved] = useState(false);
   const [securityForm, setSecurityForm] = useState({ newPassword: "", confirmPassword: "" });
@@ -83,10 +117,12 @@ export default function SettingsPage() {
     crNumber: "",
     currency: "OMR",
     language: "en" as "en" | "ar",
+    logoUrl: "",
   });
 
   useEffect(() => {
     if (!agency) return;
+    setSelectedPlanId((agency.plan as SubscriptionPlanView["id"]) || "starter");
     setProfileForm({
       name: agency.name || "",
       email: agency.email || "",
@@ -95,18 +131,35 @@ export default function SettingsPage() {
       crNumber: agency.crNumber || "",
       currency: agency.currency || "OMR",
       language: (agency.language as "en" | "ar") || "en",
+      logoUrl: agency.logoUrl || "",
     });
   }, [agency]);
 
   useEffect(() => {
     let cancelled = false;
     async function loadUsers() {
-      if (!user?.agencyId || !supabase) {
+      if (!user?.agencyId) {
         setUsers([]);
         setUsersLoading(false);
         return;
       }
       setUsersLoading(true);
+      if (useLocalStorage || !supabase) {
+        const raw = typeof window !== "undefined" ? localStorage.getItem(`tdp_users_${user.agencyId}`) : null;
+        const stored = raw ? JSON.parse(raw) as SettingsUser[] : [];
+        const currentUser = user ? [{
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          active: true,
+        }] : [];
+        if (!cancelled) {
+          setUsers(stored.length > 0 ? stored : currentUser);
+          setUsersLoading(false);
+        }
+        return;
+      }
       const { data } = await supabase
         .from("users")
         .select("id,name,email,role,active")
@@ -119,7 +172,7 @@ export default function SettingsPage() {
     }
     loadUsers();
     return () => { cancelled = true; };
-  }, [user?.agencyId]);
+  }, [user, useLocalStorage]);
 
   useEffect(() => {
     if (!user?.agencyId || typeof window === "undefined") return;
@@ -135,7 +188,35 @@ export default function SettingsPage() {
     }
   }, [user?.agencyId]);
 
-  const currentPlanId = agency?.plan || "starter";
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPlans() {
+      setPlansLoading(true);
+      if (!useLocalStorage && supabase) {
+        const { data, error } = await supabase
+          .from("subscription_plans")
+          .select("id,name,monthly_price,user_limit,booking_limit,features,is_active")
+          .eq("is_active", true)
+          .order("monthly_price", { ascending: true });
+        if (!cancelled && !error && data?.length) {
+          setPlans(data.map((plan) => ({
+            id: plan.id as SubscriptionPlanView["id"],
+            name: plan.name,
+            priceOmr: Number(plan.monthly_price),
+            maxUsers: plan.user_limit,
+            maxBookings: plan.booking_limit,
+            features: plan.features || [],
+            isActive: plan.is_active,
+          })));
+        }
+      }
+      if (!cancelled) setPlansLoading(false);
+    }
+    loadPlans();
+    return () => { cancelled = true; };
+  }, [useLocalStorage]);
+
+  const currentPlanId = selectedPlanId;
   const currentPlan = SUBSCRIPTION_PLANS.find((plan) => plan.id === currentPlanId) || SUBSCRIPTION_PLANS[0];
 
   const saveNotifications = (next: Record<string, boolean>) => {
@@ -145,6 +226,177 @@ export default function SettingsPage() {
     }
     setNotificationsSaved(true);
     setTimeout(() => setNotificationsSaved(false), 1500);
+  };
+
+  const persistLocalUsers = (nextUsers: SettingsUser[]) => {
+    if (user?.agencyId && typeof window !== "undefined") {
+      localStorage.setItem(`tdp_users_${user.agencyId}`, JSON.stringify(nextUsers));
+    }
+  };
+
+  const openAddUser = () => {
+    setEditingUser(null);
+    setUserForm({ name: "", email: "", role: "viewer", active: true });
+    setUserError(null);
+    setUserModalOpen(true);
+  };
+
+  const openEditUser = (target: SettingsUser) => {
+    setEditingUser(target);
+    setUserForm({ name: target.name, email: target.email, role: target.role, active: target.active });
+    setUserError(null);
+    setUserModalOpen(true);
+  };
+
+  const saveUser = async () => {
+    setUserError(null);
+    setUserMessage(null);
+    if (!user?.agencyId) {
+      setUserError("Agency profile is not loaded.");
+      return;
+    }
+    if (!userForm.name.trim() || !userForm.email.trim()) {
+      setUserError("Name and email are required.");
+      return;
+    }
+    if (editingUser?.id === user.id && (!userForm.active || userForm.role !== user.role)) {
+      setUserError("You cannot change your own role or deactivate your own account.");
+      return;
+    }
+
+    setUserSaving(true);
+    try {
+      if (!useLocalStorage && supabase) {
+        if (editingUser) {
+          const { error } = await supabase
+            .from("users")
+            .update({
+              name: userForm.name.trim(),
+              email: userForm.email.trim(),
+              role: userForm.role,
+              active: userForm.active,
+            })
+            .eq("id", editingUser.id);
+          if (error) throw error;
+          setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? { ...u, ...userForm, name: userForm.name.trim(), email: userForm.email.trim() } : u)));
+        } else {
+          const newUser = {
+            id: crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}`,
+            agency_id: user.agencyId,
+            name: userForm.name.trim(),
+            email: userForm.email.trim(),
+            role: userForm.role,
+            active: userForm.active,
+          };
+          const { data, error } = await supabase.from("users").insert(newUser).select("id,name,email,role,active").single();
+          if (error) throw error;
+          setUsers((prev) => [...prev, data as SettingsUser]);
+        }
+      } else {
+        setUsers((prev) => {
+          const next = editingUser
+            ? prev.map((u) => (u.id === editingUser.id ? { ...u, ...userForm, name: userForm.name.trim(), email: userForm.email.trim() } : u))
+            : [...prev, {
+              id: crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}`,
+              name: userForm.name.trim(),
+              email: userForm.email.trim(),
+              role: userForm.role,
+              active: userForm.active,
+            }];
+          persistLocalUsers(next);
+          return next;
+        });
+      }
+      setUserMessage(editingUser ? "User changes saved." : "User added.");
+      setTimeout(() => setUserMessage(null), 2000);
+      setUserModalOpen(false);
+    } catch (err) {
+      setUserError(err instanceof Error ? err.message : "Failed to save user.");
+    } finally {
+      setUserSaving(false);
+    }
+  };
+
+  const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Failed to read logo file."));
+    reader.readAsDataURL(file);
+  });
+
+  const handleLogoUpload = async (file: File | null) => {
+    setLogoError(null);
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Please upload a PNG, JPG, SVG, or WebP image.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError("Logo must be smaller than 2 MB.");
+      return;
+    }
+    if (!agency?.id) {
+      setLogoError("Agency profile is not loaded.");
+      return;
+    }
+
+    setLogoUploading(true);
+    try {
+      let logoUrl: string;
+      if (!useLocalStorage && supabase) {
+        const extension = file.name.split(".").pop()?.toLowerCase() || "png";
+        const path = `${agency.id}/logo-${Date.now()}.${extension}`;
+        const { error: uploadError } = await supabase.storage
+          .from("agency-assets")
+          .upload(path, file, { cacheControl: "3600", upsert: true, contentType: file.type });
+        if (uploadError) throw uploadError;
+        logoUrl = supabase.storage.from("agency-assets").getPublicUrl(path).data.publicUrl;
+        const { error: updateError } = await supabase
+          .from("agencies")
+          .update({ logo_url: logoUrl, updated_at: new Date().toISOString() })
+          .eq("id", agency.id);
+        if (updateError) throw updateError;
+        await refreshProfile();
+      } else {
+        logoUrl = await readFileAsDataUrl(file);
+      }
+      setProfileForm((prev) => ({ ...prev, logoUrl }));
+      updateBranding({ logoUrl });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : "Failed to upload logo.");
+    } finally {
+      setLogoUploading(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    }
+  };
+
+  const saveSubscriptionPlan = async (planId: SubscriptionPlanView["id"]) => {
+    setSubscriptionError(null);
+    setSubscriptionMessage(null);
+    if (!agency?.id) {
+      setSubscriptionError("Agency profile is not loaded.");
+      return;
+    }
+    setSubscriptionSaving(planId);
+    try {
+      if (!useLocalStorage && supabase) {
+        const { error } = await supabase
+          .from("agencies")
+          .update({ plan: planId, updated_at: new Date().toISOString() })
+          .eq("id", agency.id);
+        if (error) throw error;
+        await refreshProfile();
+      }
+      setSelectedPlanId(planId);
+      setSubscriptionMessage("Subscription plan saved.");
+      setTimeout(() => setSubscriptionMessage(null), 2000);
+    } catch (err) {
+      setSubscriptionError(err instanceof Error ? err.message : "Failed to save subscription plan.");
+    } finally {
+      setSubscriptionSaving(null);
+    }
   };
 
   const handlePasswordSave = async () => {
@@ -199,6 +451,7 @@ export default function SettingsPage() {
           phone: profileForm.phone.trim(),
           address: profileForm.address.trim() || null,
           cr_number: profileForm.crNumber.trim() || null,
+          logo_url: profileForm.logoUrl || null,
           currency: profileForm.currency,
           language: profileForm.language,
           updated_at: new Date().toISOString(),
@@ -209,6 +462,14 @@ export default function SettingsPage() {
 
       if (error) throw error;
       setLanguage(profileForm.language);
+      updateBranding({
+        name: profileForm.name.trim(),
+        email: profileForm.email.trim(),
+        phone: profileForm.phone.trim(),
+        address: profileForm.address.trim(),
+        crNumber: profileForm.crNumber.trim(),
+        logoUrl: profileForm.logoUrl,
+      });
       await refreshProfile();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -251,21 +512,40 @@ export default function SettingsPage() {
           {activeTab === "general" && (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center relative">
-                  <Briefcase className="w-8 h-8 text-slate-400" />
+                <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center relative overflow-hidden">
+                  {profileForm.logoUrl ? (
+                    <img src={profileForm.logoUrl} alt="Agency logo" className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <Briefcase className="w-8 h-8 text-slate-400" />
+                  )}
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    className="hidden"
+                    onChange={(e) => handleLogoUpload(e.target.files?.[0] || null)}
+                  />
                   <button
-                    disabled
-                    title="Logo upload is coming soon"
-                    className="absolute bottom-0 right-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center shadow-sm cursor-not-allowed"
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={logoUploading}
+                    title="Upload agency logo"
+                    className="absolute bottom-0 right-0 w-7 h-7 bg-brand text-white rounded-full flex items-center justify-center shadow-sm hover:bg-deep-blue disabled:opacity-60"
                   >
-                    <Upload className="w-3 h-3" />
+                    {logoUploading ? <span className="h-3 w-3 animate-spin rounded-full border border-white/40 border-t-white" /> : <Upload className="w-3.5 h-3.5" />}
                   </button>
                 </div>
                 <div>
                   <h3 className="font-bold text-navy">{t("agencyProfile")}</h3>
                   <p className="text-sm text-slate-500">Update your agency details</p>
+                  <p className="mt-1 text-xs text-slate-400">Logo appears on invoice previews and PDFs.</p>
                 </div>
               </div>
+              {logoError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {logoError}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -349,9 +629,16 @@ export default function SettingsPage() {
           {activeTab === "users" && (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-navy">{t("usersRoles")}</h3>
-                <button disabled title="Invites are coming soon" className="px-3 py-2 bg-slate-200 text-slate-500 text-sm font-medium rounded-lg cursor-not-allowed">+ Invite User</button>
+                <div>
+                  <h3 className="font-bold text-navy">{t("usersRoles")}</h3>
+                  <p className="text-xs text-slate-500 mt-1">Manage agency team profiles, roles, and access status.</p>
+                </div>
+                <button onClick={openAddUser} className="inline-flex items-center gap-2 px-3 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg">
+                  <UserPlus className="w-4 h-4" /> Add User
+                </button>
               </div>
+              {userMessage && <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{userMessage}</div>}
+              {userError && !userModalOpen && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{userError}</div>}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -377,7 +664,9 @@ export default function SettingsPage() {
                           </span>
                         </td>
                         <td className="px-3 py-3">
-                          <button disabled title="Role editing is coming soon" className="text-slate-400 text-xs font-medium cursor-not-allowed">Edit</button>
+                          <button onClick={() => openEditUser(u)} className="inline-flex items-center gap-1 text-brand text-xs font-medium hover:underline">
+                            <Edit2 className="w-3.5 h-3.5" /> Edit
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -394,6 +683,53 @@ export default function SettingsPage() {
                   </tbody>
                 </table>
               </div>
+              {userModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setUserModalOpen(false)} />
+                  <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <h2 className="text-lg font-bold text-navy">{editingUser ? "Edit User" : "Add User"}</h2>
+                        <p className="text-xs text-slate-500">Changes are saved to the agency users table.</p>
+                      </div>
+                      <button onClick={() => setUserModalOpen(false)} className="rounded-lg p-2 hover:bg-slate-100">
+                        <X className="h-5 w-5 text-slate-400" />
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
+                        <input value={userForm.name} onChange={(e) => setUserForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
+                        <input type="email" value={userForm.email} onChange={(e) => setUserForm((prev) => ({ ...prev, email: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                        <select value={userForm.role} onChange={(e) => setUserForm((prev) => ({ ...prev, role: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" disabled={editingUser?.id === user?.id}>
+                          {editableRoles.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
+                        </select>
+                      </div>
+                      <label className="flex items-center gap-3 text-sm text-slate-700">
+                        <input type="checkbox" checked={userForm.active} onChange={(e) => setUserForm((prev) => ({ ...prev, active: e.target.checked }))} disabled={editingUser?.id === user?.id} className="w-4 h-4 rounded border-slate-300 text-brand focus:ring-brand" />
+                        Active user
+                      </label>
+                      {userError && (
+                        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {userError}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-6 flex justify-end gap-2">
+                      <button onClick={() => setUserModalOpen(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                      <button onClick={saveUser} disabled={userSaving} className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-deep-blue disabled:opacity-50">
+                        <Save className="h-4 w-4" /> {userSaving ? "Saving..." : "Save User"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -405,11 +741,15 @@ export default function SettingsPage() {
                   <div>
                     <h3 className="font-bold text-navy">{t("currentPlan")}</h3>
                     <p className="text-sm text-slate-500">You are currently on the {currentPlan.name} plan</p>
+                    <p className="text-xs text-slate-400 mt-1">Plan data loads from Supabase; saving updates this agency profile.</p>
                   </div>
                   <span className="px-3 py-1 bg-brand text-white text-xs font-bold rounded-full">{currentPlan.name}</span>
                 </div>
+                {plansLoading && <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">Loading subscription plans...</div>}
+                {subscriptionMessage && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{subscriptionMessage}</div>}
+                {subscriptionError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{subscriptionError}</div>}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  {SUBSCRIPTION_PLANS.map((plan) => (
+                  {plans.map((plan) => (
                     <div key={plan.id} className={`border rounded-xl p-4 transition-all ${plan.id === currentPlanId ? "border-brand bg-brand/5 ring-1 ring-brand" : "border-slate-200"}`}>
                       <h4 className="font-bold text-navy">{plan.name}</h4>
                       <p className="text-2xl font-bold text-brand mt-2">{plan.priceOmr} <span className="text-sm font-normal text-slate-500">OMR/mo</span></p>
@@ -419,11 +759,12 @@ export default function SettingsPage() {
                         ))}
                       </ul>
                       <button
-                        disabled
-                        title={plan.id === currentPlanId ? "Current plan" : "Plan changes are handled by support"}
-                        className={`w-full mt-4 py-2 rounded-lg text-sm font-medium cursor-not-allowed ${plan.id === currentPlanId ? "bg-brand text-white" : "border border-slate-200 text-slate-400 bg-slate-50"}`}
+                        onClick={() => saveSubscriptionPlan(plan.id)}
+                        disabled={subscriptionSaving !== null || plan.id === currentPlanId}
+                        title={plan.id === currentPlanId ? "Current plan" : "Save this subscription plan"}
+                        className={`w-full mt-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${plan.id === currentPlanId ? "bg-brand text-white" : "border border-slate-200 text-slate-700 hover:border-brand hover:text-brand"}`}
                       >
-                        {plan.id === currentPlanId ? "Current Plan" : plan.id === "enterprise" ? t("contactSales") : t("upgrade")}
+                        {subscriptionSaving === plan.id ? "Saving..." : plan.id === currentPlanId ? "Current Plan" : "Save Plan"}
                       </button>
                     </div>
                   ))}
@@ -550,6 +891,9 @@ export default function SettingsPage() {
                 <h3 className="font-bold text-navy">WhatsApp Business Settings</h3>
                 <p className="text-sm text-slate-500 mt-1">Invoice sharing uses WhatsApp Web via wa.me with a pre-filled invoice summary.</p>
               </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                WhatsApp Business API delivery is Coming Soon. Production actions only open WhatsApp Web; no API send is attempted.
+              </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Sharing method</label>
@@ -575,7 +919,7 @@ export default function SettingsPage() {
                 className="px-4 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
               >
                 {whatsappSaved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                {whatsappSaved ? "Saved" : "Save WhatsApp Settings"}
+                {whatsappSaved ? "Saved" : "Save WhatsApp Web Preference"}
               </button>
             </div>
           )}

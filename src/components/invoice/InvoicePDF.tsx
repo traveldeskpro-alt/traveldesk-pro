@@ -2,7 +2,7 @@
 
 import React from 'react';
 import {
-  Document, Page, Text, View, StyleSheet, pdf
+  Document, Page, Text, View, StyleSheet, Image, pdf
 } from '@react-pdf/renderer';
 import { InvoiceRecord, AgencyBranding } from '@/hooks/useDataStore';
 
@@ -24,6 +24,22 @@ const styles = StyleSheet.create({
     borderBottomStyle: 'solid',
   },
   brandCol: { width: '55%' },
+  brandHeader: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+  },
+  logo: {
+    width: 42,
+    height: 42,
+    objectFit: 'contain',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderStyle: 'solid',
+    borderRadius: 6,
+    padding: 3,
+  },
+  brandText: { flex: 1 },
   brandName: {
     fontSize: 20,
     fontFamily: 'Helvetica-Bold',
@@ -218,13 +234,18 @@ export function InvoiceDocument({ invoice, branding }: { invoice: InvoiceRecord;
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View style={styles.brandCol}>
-            <Text style={styles.brandName}>{branding.name || 'TravelDesk Pro'}</Text>
-            {branding.address && <Text style={styles.brandMeta}>{branding.address}</Text>}
-            {branding.phone && <Text style={styles.brandMeta}>Phone: {branding.phone}</Text>}
-            {branding.email && <Text style={styles.brandMeta}>Email: {branding.email}</Text>}
-            {branding.website && <Text style={styles.brandMeta}>Web: {branding.website}</Text>}
-            {branding.crNumber && <Text style={styles.brandMeta}>CR: {branding.crNumber}</Text>}
-            {branding.vatNumber && <Text style={styles.brandMeta}>VAT: {branding.vatNumber}</Text>}
+            <View style={styles.brandHeader}>
+              {branding.logoUrl && <Image src={branding.logoUrl} style={styles.logo} />}
+              <View style={styles.brandText}>
+                <Text style={styles.brandName}>{branding.name || 'TravelDesk Pro'}</Text>
+                {branding.address && <Text style={styles.brandMeta}>{branding.address}</Text>}
+                {branding.phone && <Text style={styles.brandMeta}>Phone: {branding.phone}</Text>}
+                {branding.email && <Text style={styles.brandMeta}>Email: {branding.email}</Text>}
+                {branding.website && <Text style={styles.brandMeta}>Web: {branding.website}</Text>}
+                {branding.crNumber && <Text style={styles.brandMeta}>CR: {branding.crNumber}</Text>}
+                {branding.vatNumber && <Text style={styles.brandMeta}>VAT: {branding.vatNumber}</Text>}
+              </View>
+            </View>
           </View>
           <View style={styles.invoiceCard}>
             <Text style={styles.invoiceCardLabel}>Invoice Number</Text>
