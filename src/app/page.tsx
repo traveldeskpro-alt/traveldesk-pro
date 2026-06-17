@@ -88,7 +88,7 @@ const faqs = [
   },
 ];
 
-const whatsappHref = "https://wa.me/96875135022?text=Hello%20TravelDesk%20Pro%2C%20I%20want%20to%20request%20a%20demo.";
+const whatsappHref = "https://wa.me/96875135022";
 
 export default function Home() {
   return (

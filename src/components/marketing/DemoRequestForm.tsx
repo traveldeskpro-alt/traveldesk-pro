@@ -16,8 +16,9 @@ export default function DemoRequestForm() {
     const message = encodeURIComponent(
       `Hello TravelDesk Pro, I want to request a demo.\nName: ${name}\nEmail: ${email}\nPhone: ${phone}`
     );
+    const fullUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
 
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank", "noopener,noreferrer");
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
