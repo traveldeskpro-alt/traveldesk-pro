@@ -79,7 +79,7 @@ export default function SettingsPage() {
   const { user, agency, refreshProfile, updatePassword } = useAuth();
   const { useLocalStorage } = useDataMode();
   const { t, setLanguage } = useLanguage();
-  const { update: updateBranding } = useAgencyBranding();
+  const { branding, update: updateBranding } = useAgencyBranding();
   const { settings: whatsappSettings, update: updateWhatsAppSettings } = useWhatsAppSettings();
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const [activeTab, setActiveTab] = useState("general");
@@ -124,16 +124,16 @@ export default function SettingsPage() {
     if (!agency) return;
     setSelectedPlanId((agency.plan as SubscriptionPlanView["id"]) || "starter");
     setProfileForm({
-      name: agency.name || "",
-      email: agency.email || "",
-      phone: agency.phone || "",
-      address: agency.address || "",
-      crNumber: agency.crNumber || "",
+      name: branding.name || agency.name || "",
+      email: branding.email || agency.email || "",
+      phone: branding.phone || agency.phone || "",
+      address: branding.address || agency.address || "",
+      crNumber: branding.crNumber || agency.crNumber || "",
       currency: agency.currency || "OMR",
       language: (agency.language as "en" | "ar") || "en",
-      logoUrl: agency.logoUrl || "",
+      logoUrl: branding.logoUrl || agency.logoUrl || "",
     });
-  }, [agency]);
+  }, [agency, branding]);
 
   useEffect(() => {
     let cancelled = false;
@@ -436,8 +436,18 @@ export default function SettingsPage() {
       setSaveError("Agency profile is not loaded.");
       return;
     }
-    if (!supabase) {
-      setSaveError("Settings persistence is unavailable because Supabase is not configured.");
+    if (useLocalStorage || !supabase) {
+      updateBranding({
+        name: profileForm.name.trim(),
+        email: profileForm.email.trim(),
+        phone: profileForm.phone.trim(),
+        address: profileForm.address.trim(),
+        crNumber: profileForm.crNumber.trim(),
+        logoUrl: profileForm.logoUrl,
+      });
+      setLanguage(profileForm.language);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
       return;
     }
 
