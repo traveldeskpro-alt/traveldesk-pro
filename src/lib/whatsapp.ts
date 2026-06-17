@@ -23,6 +23,10 @@ export function openWhatsAppWeb(phone: string, message: string): void {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+function formatWhatsAppAmount(amount: number, currency: string): string {
+  return amount.toFixed(currency === 'OMR' ? 3 : 2);
+}
+
 export function sendViaAPI(
   settings: WhatsAppSettings,
   phone: string,
@@ -81,8 +85,8 @@ export function getInvoiceWhatsAppVars(
   return {
     customer_name: invoice.customer_name,
     invoice_number: invoice.invoice_number,
-    amount: `${invoice.total.toFixed(2)} ${invoice.currency}`,
-    total_amount: `${invoice.currency} ${invoice.total.toFixed(2)}`,
+    amount: `${formatWhatsAppAmount(invoice.total, invoice.currency)} ${invoice.currency}`,
+    total_amount: `${invoice.currency} ${formatWhatsAppAmount(invoice.total, invoice.currency)}`,
     due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '—',
     agency_name: branding.name || 'TravelDesk Pro',
   };
