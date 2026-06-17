@@ -53,6 +53,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   // DemoShell. Treat it as public so AppShell does not wrap it in the real
   // authenticated sidebar or perform any session-based redirect.
   const isPublic =
+    pathname === "/" ||
     pathname === "/login" ||
     pathname === "/signup" ||
     pathname === "/forgot-password" ||
