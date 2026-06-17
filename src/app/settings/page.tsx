@@ -899,17 +899,17 @@ export default function SettingsPage() {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
               <div>
                 <h3 className="font-bold text-navy">WhatsApp Business Settings</h3>
-                <p className="text-sm text-slate-500 mt-1">Invoice sharing uses WhatsApp Web via wa.me with a pre-filled invoice summary.</p>
+                <p className="text-sm text-slate-500 mt-1">Invoice sharing opens WhatsApp Web via api.whatsapp.com with a pre-filled invoice summary.</p>
               </div>
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                WhatsApp Business API delivery is Coming Soon. Production actions only open WhatsApp Web; no API send is attempted.
+                Invoice sharing opens WhatsApp Web with a pre-filled customer message; no automatic message send is attempted.
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Sharing method</label>
                   <input
                     readOnly
-                    value="WhatsApp Web (wa.me)"
+                    value="WhatsApp Web (api.whatsapp.com)"
                     className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700"
                   />
                 </div>
@@ -920,9 +920,9 @@ export default function SettingsPage() {
                     onChange={(e) => updateWhatsAppSettings({ provider: "wame", enabled: e.target.checked })}
                     className="w-4 h-4 rounded border-slate-300 text-brand focus:ring-brand"
                   />
-                  Remember wa.me as this agency's WhatsApp sharing preference
+                  Remember WhatsApp Web as this agency's invoice sharing preference
                 </label>
-                <p className="text-xs text-slate-500">API providers are not connected in this app, so invoice sharing does not claim WhatsApp Business API delivery.</p>
+                <p className="text-xs text-slate-500">Invoice sharing opens WhatsApp Web with a customer-ready message.</p>
               </div>
               <button
                 onClick={saveWhatsAppSettings}

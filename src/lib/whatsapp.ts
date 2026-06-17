@@ -27,6 +27,10 @@ function formatWhatsAppAmount(amount: number, currency: string): string {
   return amount.toFixed(currency === 'OMR' ? 3 : 2);
 }
 
+function getInvoiceReference(invoice: InvoiceRecord): string {
+  return invoice.reference_number || invoice.agency_branding?.reference_number || invoice.invoice_number;
+}
+
 export function sendViaAPI(
   settings: WhatsAppSettings,
   phone: string,
@@ -87,6 +91,7 @@ export function getInvoiceWhatsAppVars(
     invoice_number: invoice.invoice_number,
     amount: `${formatWhatsAppAmount(invoice.total, invoice.currency)} ${invoice.currency}`,
     total_amount: `${invoice.currency} ${formatWhatsAppAmount(invoice.total, invoice.currency)}`,
+    reference: getInvoiceReference(invoice),
     due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '—',
     agency_name: branding.name || 'TravelDesk Pro',
   };

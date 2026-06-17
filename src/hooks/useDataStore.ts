@@ -622,6 +622,13 @@ export interface InvoiceRecord {
   due_date: string;
   paid_at?: string;
   notes?: string;
+  reference_type?: 'PNR' | 'Visa Number' | 'Voucher Number' | 'Ticket Number' | 'Booking Reference' | 'Other';
+  reference_number?: string;
+  custom_reference_label?: string;
+  service_type?: string;
+  agent_name?: string;
+  travel_date?: string;
+  booking_status?: string;
   agency_branding?: {
     logo_url?: string;
     name?: string;
@@ -636,8 +643,29 @@ export interface InvoiceRecord {
     account_number?: string;
     iban?: string;
     swift_code?: string;
+    reference_type?: string;
+    reference_number?: string;
+    custom_reference_label?: string;
+    service_type?: string;
+    agent_name?: string;
+    travel_date?: string;
+    booking_status?: string;
   };
   created_at: string;
+}
+
+function normalizeInvoiceRecord(record: InvoiceRecord): InvoiceRecord {
+  const branding = record.agency_branding;
+  return {
+    ...record,
+    reference_type: record.reference_type || (branding?.reference_type as InvoiceRecord['reference_type']) || undefined,
+    reference_number: record.reference_number || branding?.reference_number || '',
+    custom_reference_label: record.custom_reference_label || branding?.custom_reference_label || '',
+    service_type: record.service_type || branding?.service_type || '',
+    agent_name: record.agent_name || branding?.agent_name || '',
+    travel_date: record.travel_date || branding?.travel_date || '',
+    booking_status: record.booking_status || branding?.booking_status || '',
+  };
 }
 
 export function useInvoices() {
@@ -662,7 +690,7 @@ export function useInvoices() {
         .then(({ data, error }) => {
           if (cancelled) return;
           if (!error && data) {
-            const parsed = (data as any[]).map((d) => ({ ...d, items: Array.isArray(d.items) ? d.items : JSON.parse(d.items || '[]') }));
+            const parsed = (data as any[]).map((d) => normalizeInvoiceRecord({ ...d, items: Array.isArray(d.items) ? d.items : JSON.parse(d.items || '[]') } as InvoiceRecord));
             setInvoices(parsed as InvoiceRecord[]);
           }
           setLoading(false);
@@ -698,6 +726,16 @@ export function useInvoices() {
       if (!UUID_RE.test(newRecord.customer_id)) {
         throw new Error(`customer_id is not a valid UUID: "${newRecord.customer_id}". Please select a customer from the dropdown.`);
       }
+      const agencyBranding = {
+        ...(newRecord.agency_branding ?? {}),
+        reference_type: newRecord.reference_type ?? newRecord.agency_branding?.reference_type ?? null,
+        reference_number: newRecord.reference_number ?? newRecord.agency_branding?.reference_number ?? null,
+        custom_reference_label: newRecord.custom_reference_label ?? newRecord.agency_branding?.custom_reference_label ?? null,
+        service_type: newRecord.service_type ?? newRecord.agency_branding?.service_type ?? null,
+        agent_name: newRecord.agent_name ?? newRecord.agency_branding?.agent_name ?? null,
+        travel_date: newRecord.travel_date ?? newRecord.agency_branding?.travel_date ?? null,
+        booking_status: newRecord.booking_status ?? newRecord.agency_branding?.booking_status ?? null,
+      };
       const insertPayload = {
         id: newRecord.id,
         agency_id: newRecord.agency_id,
@@ -713,7 +751,7 @@ export function useInvoices() {
         issued_at: newRecord.issued_at,
         due_date: newRecord.due_date,
         paid_at: newRecord.paid_at ?? null,
-        agency_branding: newRecord.agency_branding ?? null,
+        agency_branding: agencyBranding,
         created_at: newRecord.created_at,
       };
       const { data: inserted, error } = await supabase.from('invoices').insert(insertPayload).select().single();
@@ -721,12 +759,12 @@ export function useInvoices() {
         console.error('[useInvoices] Supabase insert error:', error.message, error.details, error.hint, error.code);
         throw error;
       }
-      const parsed = { ...newRecord, ...inserted, items: Array.isArray(inserted.items) ? inserted.items : JSON.parse(inserted.items || '[]') };
+      const parsed = normalizeInvoiceRecord({ ...newRecord, ...inserted, items: Array.isArray(inserted.items) ? inserted.items : JSON.parse(inserted.items || '[]') } as InvoiceRecord);
       setInvoices((prev) => [parsed as InvoiceRecord, ...prev]);
       return parsed as InvoiceRecord;
     }
     setInvoices((prev) => {
-      const updated = [newRecord, ...prev];
+      const updated = [normalizeInvoiceRecord(newRecord), ...prev];
       saveTable(agencyId, 'invoices', updated);
       return updated;
     });
@@ -735,11 +773,38 @@ export function useInvoices() {
 
   const update = useCallback(async (id: string, data: Partial<Omit<InvoiceRecord, 'id' | 'agency_id'>>) => {
     if (!useLocalStorage && isSupabaseEnabled && supabase) {
-      await supabase.from('invoices').update(data).eq('id', id);
-      setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, ...data } : i)));
+      const agencyBranding = data.agency_branding || (
+        data.reference_type || data.reference_number || data.custom_reference_label || data.service_type || data.agent_name || data.travel_date || data.booking_status
+          ? {
+              reference_type: data.reference_type ?? null,
+              reference_number: data.reference_number ?? null,
+              custom_reference_label: data.custom_reference_label ?? null,
+              service_type: data.service_type ?? null,
+              agent_name: data.agent_name ?? null,
+              travel_date: data.travel_date ?? null,
+              booking_status: data.booking_status ?? null,
+            }
+          : undefined
+      );
+      const updatePayload: Record<string, unknown> = {};
+      if (data.customer_id !== undefined) updatePayload.customer_id = data.customer_id;
+      if (data.customer_name !== undefined) updatePayload.customer_name = data.customer_name;
+      if (data.invoice_number !== undefined) updatePayload.invoice_number = data.invoice_number;
+      if (data.items !== undefined) updatePayload.items = data.items;
+      if (data.subtotal !== undefined) updatePayload.subtotal = data.subtotal;
+      if (data.tax !== undefined) updatePayload.tax = data.tax;
+      if (data.total !== undefined) updatePayload.total = data.total;
+      if (data.currency !== undefined) updatePayload.currency = data.currency;
+      if (data.status !== undefined) updatePayload.status = data.status;
+      if (data.issued_at !== undefined) updatePayload.issued_at = data.issued_at;
+      if (data.due_date !== undefined) updatePayload.due_date = data.due_date;
+      if (data.paid_at !== undefined) updatePayload.paid_at = data.paid_at;
+      if (agencyBranding !== undefined) updatePayload.agency_branding = agencyBranding;
+      await supabase.from('invoices').update(updatePayload).eq('id', id);
+      setInvoices((prev) => prev.map((i) => (i.id === id ? normalizeInvoiceRecord({ ...i, ...data }) : i)));
     } else {
       setInvoices((prev) => {
-        const updated = prev.map((i) => (i.id === id ? { ...i, ...data } : i));
+        const updated = prev.map((i) => (i.id === id ? normalizeInvoiceRecord({ ...i, ...data }) : i));
         saveTable(agencyId, 'invoices', updated);
         return updated;
       });

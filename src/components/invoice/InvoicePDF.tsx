@@ -48,16 +48,13 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
     borderBottomStyle: 'solid',
   },
-  headerBrand: { width: '38%', paddingRight: 14 },
+  headerBrand: { width: '24%', paddingRight: 14 },
   headerInfo: {
-    width: '34%',
+    width: '46%',
     paddingHorizontal: 16,
-    borderLeftWidth: 1,
-    borderLeftColor: COLORS.border,
-    borderLeftStyle: 'solid',
   },
   headerContact: {
-    width: '28%',
+    width: '30%',
     paddingLeft: 16,
     borderLeftWidth: 1,
     borderLeftColor: COLORS.border,
@@ -65,8 +62,8 @@ const styles = StyleSheet.create({
   },
   brandRow: { flexDirection: 'row', alignItems: 'center' },
   logo: {
-    width: 54,
-    height: 54,
+    width: 96,
+    height: 58,
     objectFit: 'contain',
     marginRight: 10,
   },
@@ -88,9 +85,10 @@ const styles = StyleSheet.create({
   },
   brandName: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 20,
+    fontSize: 13,
     color: COLORS.navy,
-    lineHeight: 1.05,
+    lineHeight: 1.15,
+    marginBottom: 6,
   },
   brandAccent: { color: COLORS.orange },
   tagline: {
@@ -132,6 +130,12 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: COLORS.text,
     lineHeight: 1.3,
+  },
+  headerMeta: {
+    fontSize: 8.3,
+    color: COLORS.text,
+    lineHeight: 1.35,
+    marginBottom: 3,
   },
   cards: {
     flexDirection: 'row',
@@ -238,7 +242,7 @@ const styles = StyleSheet.create({
   totalsWrap: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginBottom: 22,
+    marginBottom: 10,
   },
   totalsBox: { width: 260 },
   totalRow: {
@@ -292,6 +296,53 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontFamily: 'Helvetica-Bold',
     fontSize: 14,
+  },
+  whatsAppShare: {
+    width: 260,
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderStyle: 'solid',
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 18,
+  },
+  whatsAppIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#22C55E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  whatsAppIconText: {
+    color: COLORS.white,
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 10,
+  },
+  whatsAppText: { flex: 1 },
+  whatsAppTitle: {
+    fontFamily: 'Helvetica-Bold',
+    color: COLORS.navy,
+    fontSize: 8.5,
+    marginBottom: 2,
+  },
+  whatsAppCopy: {
+    color: COLORS.text,
+    fontSize: 7.2,
+    lineHeight: 1.2,
+  },
+  whatsAppQr: {
+    width: 42,
+    height: 42,
+    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderStyle: 'solid',
+    padding: 2,
   },
   bottom: {
     flexDirection: 'row',
@@ -446,7 +497,15 @@ function getOptionalString(invoice: InvoiceRecord, keys: string[]) {
 
 function getBookingReference(invoice: InvoiceRecord) {
   return getOptionalString(invoice, ['booking_reference', 'bookingReference', 'booking_ref']) ||
+    invoice.reference_number ||
+    invoice.agency_branding?.reference_number ||
     invoice.id.slice(0, 8).toUpperCase();
+}
+
+function getReferenceLabel(invoice: InvoiceRecord) {
+  const type = invoice.reference_type || invoice.agency_branding?.reference_type || 'Booking Reference';
+  if (type === 'Other') return invoice.custom_reference_label || invoice.agency_branding?.custom_reference_label || 'Other';
+  return type;
 }
 
 function getServiceType(invoice: InvoiceRecord) {
@@ -487,13 +546,44 @@ function buildQrPayload(invoice: InvoiceRecord, branding: AgencyBranding) {
   ].join('\n');
 }
 
-function InfoRow({ label, value }: { label: string; value?: string | null }) {
+function buildWhatsAppShareUrl(invoice: InvoiceRecord, branding: AgencyBranding) {
+  const clean = (branding.phone || '').replace(/\D/g, '').replace(/^0/, '');
+  const message = [
+    `Hello ${invoice.customer_name},`,
+    '',
+    'Please find your invoice.',
+    '',
+    `Invoice No: ${invoice.invoice_number}`,
+    `Reference: ${getBookingReference(invoice)}`,
+    `Amount: ${invoice.currency} ${formatAmount(invoice.total, invoice.currency)}`,
+    '',
+    'Thank you.',
+    '',
+    branding.name || 'TravelDesk Pro',
+  ].join('\n');
+  return clean ? `https://api.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(message)}` : '';
+}
+
+function chunkInvoiceItems(items: InvoiceRecord['items']) {
+  const firstPageSize = 12;
+  const nextPageSize = 18;
+  const source = items.length ? items : [{ description: 'Invoice item', quantity: 1, unit_price: 0, total: 0 }];
+  const chunks: InvoiceRecord['items'][] = [source.slice(0, firstPageSize)];
+  let cursor = firstPageSize;
+  while (cursor < source.length) {
+    chunks.push(source.slice(cursor, cursor + nextPageSize));
+    cursor += nextPageSize;
+  }
+  return chunks;
+}
+
+function InfoRow({ label, value, noWrap = false }: { label: string; value?: string | null; noWrap?: boolean }) {
   if (!isPresent(value)) return null;
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
       <Text style={styles.rowColon}>:</Text>
-      <Text style={styles.rowValue}>{value}</Text>
+      <Text style={styles.rowValue} wrap={!noWrap}>{value}</Text>
     </View>
   );
 }
@@ -508,6 +598,11 @@ function ContactLine({ icon, value }: { icon: string; value?: string | null }) {
       <Text style={styles.contactText}>{value}</Text>
     </View>
   );
+}
+
+function HeaderMeta({ value }: { value?: string | null }) {
+  if (!isPresent(value)) return null;
+  return <Text style={styles.headerMeta}>{value}</Text>;
 }
 
 function BankRow({ label, value }: { label: string; value?: string }) {
@@ -525,17 +620,19 @@ function InvoiceDocument({
   invoice,
   branding,
   qrCodeDataUrl,
+  whatsAppQrDataUrl,
 }: {
   invoice: InvoiceRecord;
   branding: AgencyBranding;
   qrCodeDataUrl?: string;
+  whatsAppQrDataUrl?: string;
 }) {
   const currency = invoice.currency || 'OMR';
   const itemTaxRate = invoice.tax_enabled ? invoice.tax_percentage / 100 : 0;
   const discount = 0;
   const taxableAmount = Math.max(invoice.subtotal - discount, 0);
   const amountPaid = invoice.status === 'paid' ? invoice.total : 0;
-  const balanceDue = Math.max(invoice.total - amountPaid, 0);
+  const totalLabel = invoice.status === 'paid' ? 'Total Amount' : 'Total Due Amount';
   const bankFields = [
     branding.bankName,
     branding.accountName,
@@ -544,141 +641,168 @@ function InvoiceDocument({
     branding.swiftCode,
   ].some(isPresent);
   const footerItems = [branding.phone, branding.email, branding.website].filter(isPresent);
+  const itemChunks = chunkInvoiceItems(invoice.items ?? []);
+  const itemOffsets = itemChunks.reduce<number[]>((offsets, chunk, idx) => {
+    offsets.push(idx === 0 ? 0 : offsets[idx - 1] + itemChunks[idx - 1].length);
+    return offsets;
+  }, []);
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          <View style={styles.headerBrand}>
-            <View style={styles.brandRow}>
-              {branding.logoUrl ? (
-                <Image src={branding.logoUrl} style={styles.logo} />
-              ) : (
-                <View style={styles.fallbackLogo}>
-                  <Text style={styles.fallbackLogoText}>TDP</Text>
-                </View>
-              )}
-              <View>
-                <Text style={styles.brandName}>
-                  {branding.name || 'TravelDesk'} <Text style={styles.brandAccent}>Pro</Text>
-                </Text>
-                <Text style={styles.tagline}>Smart bookings. Better experiences.</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.headerInfo}>
-            <Text style={styles.companyName}>{branding.name || 'TravelDesk Pro'}</Text>
-            <ContactLine icon="CR" value={branding.crNumber ? `CR No.: ${branding.crNumber}` : ''} />
-            <ContactLine icon="VAT" value={branding.vatNumber ? `VAT No.: ${branding.vatNumber}` : ''} />
-            <ContactLine icon="LOC" value={branding.address || ''} />
-          </View>
-
-          <View style={styles.headerContact}>
-            <ContactLine icon="TEL" value={branding.phone} />
-            <ContactLine icon="MAIL" value={branding.email} />
-            <ContactLine icon="WEB" value={branding.website} />
-          </View>
-        </View>
-
-        <View style={styles.cards}>
-          <View style={[styles.infoCard, styles.infoCardFirst]}>
-            <Text style={styles.sectionTitle}>Bill To</Text>
-            <Text style={styles.customerName}>{invoice.customer_name}</Text>
-            <InfoRow label="Phone" value={invoice.customer_phone} />
-            <InfoRow label="Email" value={invoice.customer_email} />
-            <InfoRow label="Passport No." value={invoice.customer_passport} />
-            <InfoRow label="Nationality" value={invoice.customer_nationality} />
-          </View>
-
-          <View style={styles.infoCard}>
-            <Text style={styles.sectionTitle}>Booking Summary</Text>
-            <InfoRow label="Booking Ref." value={getBookingReference(invoice)} />
-            <InfoRow label="Travel Date" value={getTravelDate(invoice)} />
-            <InfoRow label="Service Type" value={getServiceType(invoice)} />
-            <InfoRow label="Agent Name" value={getAgentName(invoice)} />
-            <InfoRow label="Status" value={getBookingStatus(invoice)} />
-          </View>
-
-          <View style={[styles.infoCard, styles.infoCardLast]}>
-            <Text style={styles.invoiceTitle}>INVOICE</Text>
-            <InfoRow label="Invoice No." value={invoice.invoice_number} />
-            <InfoRow label="Issue Date" value={formatDate(invoice.issued_at)} />
-            <InfoRow label="Due Date" value={formatDate(invoice.due_date)} />
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Payment Status</Text>
-              <Text style={styles.rowColon}>:</Text>
-              <View style={[styles.statusBadge, { backgroundColor: statusColor(invoice.status) }]}>
-                <Text style={styles.statusText}>{invoice.status}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.th, styles.colNum]}>#</Text>
-            <Text style={[styles.th, styles.colDesc]}>Description</Text>
-            <Text style={[styles.th, styles.colQty]}>Qty</Text>
-            <Text style={[styles.th, styles.colUnit]}>Unit Price ({currency})</Text>
-            <Text style={[styles.th, styles.colTax]}>Tax ({currency})</Text>
-            <Text style={[styles.th, styles.colAmount]}>Amount ({currency})</Text>
-          </View>
-          {(invoice.items ?? []).map((item, idx) => {
-            const lineTax = item.total * itemTaxRate;
-            return (
-              <View key={idx} style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowAlt : {}]}>
-                <Text style={[styles.td, styles.colNum]}>{idx + 1}</Text>
-                <Text style={[styles.td, styles.colDesc]}>{item.description}</Text>
-                <Text style={[styles.td, styles.colQty]}>{item.quantity}</Text>
-                <Text style={[styles.td, styles.colUnit]}>{formatAmount(item.unit_price, currency)}</Text>
-                <Text style={[styles.td, styles.colTax]}>{invoice.tax_enabled ? formatAmount(lineTax, currency) : '-'}</Text>
-                <Text style={[styles.td, styles.colAmount]}>{formatAmount(item.total, currency)}</Text>
-              </View>
-            );
-          })}
-        </View>
-
-        <View style={styles.totalsWrap}>
-          <View style={styles.totalsBox}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Subtotal</Text>
-              <Text style={styles.totalCurrency}>{currency}</Text>
-              <Text style={styles.totalValue}>{formatAmount(invoice.subtotal, currency)}</Text>
-            </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Discount</Text>
-              <Text style={styles.totalCurrency}>{currency}</Text>
-              <Text style={[styles.totalValue, styles.discountValue]}>{formatAmount(discount, currency)}</Text>
-            </View>
-            {invoice.tax_enabled && (
+      {itemChunks.map((chunk, pageIndex) => {
+        const isFirstPage = pageIndex === 0;
+        const isLastPage = pageIndex === itemChunks.length - 1;
+        const offset = itemOffsets[pageIndex];
+        return (
+          <Page key={pageIndex} size="A4" style={styles.page}>
+            {isFirstPage ? (
               <>
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Taxable Amount</Text>
-                  <Text style={styles.totalCurrency}>{currency}</Text>
-                  <Text style={styles.totalValue}>{formatAmount(taxableAmount, currency)}</Text>
+                <View style={styles.header}>
+                  <View style={styles.headerBrand}>
+                    {branding.logoUrl ? (
+                      <Image src={branding.logoUrl} style={styles.logo} />
+                    ) : (
+                      <View style={styles.fallbackLogo}>
+                        <Text style={styles.fallbackLogoText}>TDP</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.headerInfo}>
+                    <Text style={styles.companyName}>{branding.name || 'TravelDesk Pro'}</Text>
+                    <HeaderMeta value={branding.crNumber ? `CR No.: ${branding.crNumber}` : ''} />
+                    <HeaderMeta value={branding.vatNumber ? `VAT No.: ${branding.vatNumber}` : ''} />
+                    <HeaderMeta value={branding.address || ''} />
+                  </View>
+                  <View style={styles.headerContact}>
+                    <ContactLine icon="☎" value={branding.phone} />
+                    <ContactLine icon="✉" value={branding.email} />
+                    <ContactLine icon="⌾" value={branding.website} />
+                    <ContactLine icon="⌖" value={branding.address} />
+                  </View>
                 </View>
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>VAT ({invoice.tax_percentage}%)</Text>
-                  <Text style={styles.totalCurrency}>{currency}</Text>
-                  <Text style={styles.totalValue}>{formatAmount(invoice.tax, currency)}</Text>
+                <View style={styles.cards}>
+                  <View style={[styles.infoCard, styles.infoCardFirst]}>
+                    <Text style={styles.sectionTitle}>Bill To</Text>
+                    <Text style={styles.customerName}>{invoice.customer_name}</Text>
+                    <InfoRow label="Phone" value={invoice.customer_phone} />
+                    <InfoRow label="Email" value={invoice.customer_email} noWrap />
+                    <InfoRow label="Passport No." value={invoice.customer_passport} />
+                    <InfoRow label="Nationality" value={invoice.customer_nationality} />
+                  </View>
+                  <View style={styles.infoCard}>
+                    <Text style={styles.sectionTitle}>Booking Summary</Text>
+                    <InfoRow label="Reference Type" value={getReferenceLabel(invoice)} />
+                    <InfoRow label="Reference No." value={getBookingReference(invoice)} />
+                    <InfoRow label="Travel Date" value={getTravelDate(invoice)} />
+                    <InfoRow label="Service Type" value={getServiceType(invoice)} />
+                    <InfoRow label="Agent Name" value={getAgentName(invoice)} />
+                    <InfoRow label="Status" value={getBookingStatus(invoice)} />
+                  </View>
+                  <View style={[styles.infoCard, styles.infoCardLast]}>
+                    <Text style={styles.invoiceTitle}>INVOICE</Text>
+                    <InfoRow label="Invoice No." value={invoice.invoice_number} />
+                    <InfoRow label="Issue Date" value={formatDate(invoice.issued_at)} />
+                    <InfoRow label="Due Date" value={formatDate(invoice.due_date)} />
+                    <View style={styles.row}>
+                      <Text style={styles.rowLabel}>Payment Status</Text>
+                      <Text style={styles.rowColon}>:</Text>
+                      <View style={[styles.statusBadge, { backgroundColor: statusColor(invoice.status) }]}>
+                        <Text style={styles.statusText}>{invoice.status}</Text>
+                      </View>
+                    </View>
+                  </View>
                 </View>
               </>
+            ) : (
+              <View style={styles.header}>
+                <View style={styles.headerBrand}>
+                  <Text style={styles.companyName}>{branding.name || 'TravelDesk Pro'}</Text>
+                </View>
+                <View style={styles.headerInfo}>
+                  <HeaderMeta value={`Invoice No.: ${invoice.invoice_number}`} />
+                  <HeaderMeta value={`Customer: ${invoice.customer_name}`} />
+                </View>
+                <View style={styles.headerContact}>
+                  <HeaderMeta value={`Page ${pageIndex + 1} of ${itemChunks.length}`} />
+                  <HeaderMeta value="Items continued" />
+                </View>
+              </View>
             )}
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Amount Paid</Text>
-              <Text style={styles.totalCurrency}>{currency}</Text>
-              <Text style={styles.totalValue}>{formatAmount(amountPaid, currency)}</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.th, styles.colNum]}>#</Text>
+                <Text style={[styles.th, styles.colDesc]}>Description</Text>
+                <Text style={[styles.th, styles.colQty]}>Qty</Text>
+                <Text style={[styles.th, styles.colUnit]}>Unit Price ({currency})</Text>
+                <Text style={[styles.th, styles.colTax]}>VAT {invoice.tax_enabled ? invoice.tax_percentage : 0}% ({currency})</Text>
+                <Text style={[styles.th, styles.colAmount]}>Amount ({currency})</Text>
+              </View>
+              {chunk.map((item, idx) => {
+                const globalIndex = offset + idx;
+                const lineTax = item.total * itemTaxRate;
+                return (
+                  <View key={globalIndex} style={[styles.tableRow, globalIndex % 2 === 1 ? styles.tableRowAlt : {}]} wrap={false}>
+                    <Text style={[styles.td, styles.colNum]}>{globalIndex + 1}</Text>
+                    <Text style={[styles.td, styles.colDesc]}>{item.description}</Text>
+                    <Text style={[styles.td, styles.colQty]}>{item.quantity}</Text>
+                    <Text style={[styles.td, styles.colUnit]}>{formatAmount(item.unit_price, currency)}</Text>
+                    <Text style={[styles.td, styles.colTax]}>{invoice.tax_enabled ? formatAmount(lineTax, currency) : '-'}</Text>
+                    <Text style={[styles.td, styles.colAmount]}>{formatAmount(item.total, currency)}</Text>
+                  </View>
+                );
+              })}
             </View>
-            <View style={styles.grandTotal}>
-              <Text style={styles.grandTotalLabel}>Total Amount Due</Text>
-              <Text style={styles.grandTotalCurrency}>{currency}</Text>
-              <Text style={styles.grandTotalValue}>{formatAmount(balanceDue, currency)}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.bottom}>
+            {isLastPage && (
+              <>
+                <View style={styles.totalsWrap}>
+                  <View style={styles.totalsBox}>
+                    <View style={styles.totalRow}>
+                      <Text style={styles.totalLabel}>Subtotal</Text>
+                      <Text style={styles.totalCurrency}>{currency}</Text>
+                      <Text style={styles.totalValue}>{formatAmount(invoice.subtotal, currency)}</Text>
+                    </View>
+                    <View style={styles.totalRow}>
+                      <Text style={styles.totalLabel}>Discount</Text>
+                      <Text style={styles.totalCurrency}>{currency}</Text>
+                      <Text style={[styles.totalValue, styles.discountValue]}>{formatAmount(discount, currency)}</Text>
+                    </View>
+                    {invoice.tax_enabled && (
+                      <>
+                        <View style={styles.totalRow}>
+                          <Text style={styles.totalLabel}>Taxable Amount</Text>
+                          <Text style={styles.totalCurrency}>{currency}</Text>
+                          <Text style={styles.totalValue}>{formatAmount(taxableAmount, currency)}</Text>
+                        </View>
+                        <View style={styles.totalRow}>
+                          <Text style={styles.totalLabel}>VAT ({invoice.tax_percentage}%)</Text>
+                          <Text style={styles.totalCurrency}>{currency}</Text>
+                          <Text style={styles.totalValue}>{formatAmount(invoice.tax, currency)}</Text>
+                        </View>
+                      </>
+                    )}
+                    <View style={styles.totalRow}>
+                      <Text style={styles.totalLabel}>Amount Paid</Text>
+                      <Text style={styles.totalCurrency}>{currency}</Text>
+                      <Text style={styles.totalValue}>{formatAmount(amountPaid, currency)}</Text>
+                    </View>
+                    <View style={styles.grandTotal}>
+                      <Text style={styles.grandTotalLabel}>{totalLabel}</Text>
+                      <Text style={styles.grandTotalCurrency}>{currency}</Text>
+                      <Text style={styles.grandTotalValue}>{formatAmount(invoice.total, currency)}</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.whatsAppShare}>
+                  <View style={styles.whatsAppIcon}>
+                    <Text style={styles.whatsAppIconText}>W</Text>
+                  </View>
+                  <View style={styles.whatsAppText}>
+                    <Text style={styles.whatsAppTitle}>Send Invoice via WhatsApp</Text>
+                    <Text style={styles.whatsAppCopy}>Click or scan the QR code to send this invoice to your customer.</Text>
+                  </View>
+                  {whatsAppQrDataUrl && <Image src={whatsAppQrDataUrl} style={styles.whatsAppQr} />}
+                </View>
+                <View style={styles.bottom}>
           <View style={styles.bottomCol}>
             <Text style={styles.sectionTitle}>Bank Details</Text>
             {bankFields ? (
@@ -724,13 +848,18 @@ function InvoiceDocument({
           </View>
           <Text style={styles.generated}>Generated by TravelDesk Pro</Text>
         </View>
-      </Page>
+              </>
+            )}
+          </Page>
+        );
+      })}
     </Document>
   );
 }
 
 export async function generateInvoicePDF(invoice: InvoiceRecord, branding: AgencyBranding): Promise<Blob> {
   let qrCodeDataUrl = '';
+  let whatsAppQrDataUrl = '';
   try {
     qrCodeDataUrl = await QRCode.toDataURL(buildQrPayload(invoice, branding), {
       errorCorrectionLevel: 'M',
@@ -744,8 +873,24 @@ export async function generateInvoicePDF(invoice: InvoiceRecord, branding: Agenc
   } catch {
     qrCodeDataUrl = '';
   }
+  try {
+    const whatsAppUrl = buildWhatsAppShareUrl(invoice, branding);
+    if (whatsAppUrl) {
+      whatsAppQrDataUrl = await QRCode.toDataURL(whatsAppUrl, {
+        errorCorrectionLevel: 'M',
+        margin: 1,
+        width: 120,
+        color: {
+          dark: COLORS.navy,
+          light: COLORS.white,
+        },
+      });
+    }
+  } catch {
+    whatsAppQrDataUrl = '';
+  }
 
-  const doc = <InvoiceDocument invoice={invoice} branding={branding} qrCodeDataUrl={qrCodeDataUrl} />;
+  const doc = <InvoiceDocument invoice={invoice} branding={branding} qrCodeDataUrl={qrCodeDataUrl} whatsAppQrDataUrl={whatsAppQrDataUrl} />;
   const instance = pdf(doc);
   return await instance.toBlob();
 }
