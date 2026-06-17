@@ -1,11 +1,16 @@
 import Link from "next/link";
+import DemoRequestForm from "@/components/marketing/DemoRequestForm";
 import {
   ArrowRight,
   BarChart3,
   CalendarCheck,
   Check,
+  ExternalLink,
   FileText,
   Globe2,
+  Mail,
+  MessageCircle,
+  Phone,
   Plane,
   ShieldCheck,
   Sparkles,
@@ -83,11 +88,15 @@ const faqs = [
   },
 ];
 
+const whatsappHref = "https://wa.me/96875135022?text=Hello%20TravelDesk%20Pro%2C%20I%20want%20to%20request%20a%20demo.";
+
 export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#F8FAFC] text-slate-950">
       <section className="relative isolate">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.14),transparent_34%),radial-gradient(circle_at_80%_10%,rgba(249,115,22,0.12),transparent_28%),linear-gradient(180deg,#ffffff_0%,#f8fafc_70%)]" />
+        <div className="absolute inset-x-0 top-0 -z-10 h-[620px] opacity-[0.08] [background-image:linear-gradient(90deg,#2563eb_1px,transparent_1px),linear-gradient(0deg,#2563eb_1px,transparent_1px)] [background-size:72px_72px]" />
+        <div className="absolute right-0 top-24 -z-10 h-72 w-72 rounded-full border border-blue-200/80 bg-[conic-gradient(from_140deg,#dbeafe,#ffffff,#fed7aa,#dbeafe)] opacity-70 blur-sm" />
         <div className="absolute left-1/2 top-0 -z-10 h-[520px] w-[920px] -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
 
         <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-6 lg:px-8">
@@ -149,10 +158,24 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative min-h-[620px] lg:[perspective:1400px]">
             <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-blue-500/20 to-orange-500/10 blur-2xl" />
-            <div className="relative rounded-[2rem] border border-white/80 bg-white/90 p-3 shadow-2xl shadow-slate-900/12 backdrop-blur">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-950 p-4 text-white">
+            <div className="absolute right-2 top-0 hidden w-40 rotate-6 rounded-[1.6rem] border border-white/80 bg-white p-3 shadow-2xl shadow-slate-900/12 md:block">
+              <div className="h-24 rounded-2xl bg-[linear-gradient(135deg,#0ea5e9,#2563eb)] p-3 text-white">
+                <Plane className="h-5 w-5" />
+                <p className="mt-6 text-xs font-bold">Muscat</p>
+                <p className="text-[10px] text-blue-100">Daily departures</p>
+              </div>
+            </div>
+            <div className="absolute bottom-14 left-0 hidden w-44 -rotate-6 rounded-[1.6rem] border border-white/80 bg-white p-3 shadow-2xl shadow-orange-500/10 md:block">
+              <div className="h-24 rounded-2xl bg-[linear-gradient(135deg,#fb923c,#f97316)] p-3 text-white">
+                <Globe2 className="h-5 w-5" />
+                <p className="mt-6 text-xs font-bold">Salalah Tour</p>
+                <p className="text-[10px] text-orange-100">Group package</p>
+              </div>
+            </div>
+            <div className="relative mx-auto max-w-xl rotate-0 rounded-[2rem] border border-white/80 bg-white/90 p-3 shadow-2xl shadow-slate-900/12 backdrop-blur lg:rotate-[-2deg] lg:[transform-style:preserve-3d]">
+              <div className="rounded-[1.5rem] border border-slate-200 bg-slate-950 p-4 text-white shadow-inner">
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-300">Command Center</p>
@@ -193,6 +216,62 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-blue-400/20 bg-blue-400/10 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-wider text-blue-200">Daily report</p>
+                      <span className="text-xs font-black text-emerald-300">+18%</span>
+                    </div>
+                    <div className="flex h-20 items-end gap-2">
+                      {[36, 52, 42, 68, 58, 78, 64].map((height, index) => (
+                        <span
+                          key={index}
+                          className="flex-1 rounded-t-lg bg-gradient-to-t from-blue-600 to-cyan-300"
+                          style={{ height: `${height}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-orange-400/20 bg-orange-400/10 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase tracking-wider text-orange-200">Monthly report</p>
+                      <span className="text-xs font-black text-orange-200">40 OMR</span>
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        ["Bookings", "82%"],
+                        ["Invoices paid", "68%"],
+                        ["Agent target", "74%"],
+                      ].map(([label, width]) => (
+                        <div key={label}>
+                          <div className="mb-1 flex justify-between text-[11px] text-slate-300">
+                            <span>{label}</span>
+                            <span>{width}</span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                            <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-200" style={{ width }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="absolute bottom-0 right-0 hidden w-64 rounded-[1.75rem] border border-white/80 bg-white/95 p-4 shadow-2xl shadow-slate-900/10 lg:block">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Agency snapshot</p>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                {[
+                  ["24", "Trips"],
+                  ["11", "Visa"],
+                  ["9", "Hotels"],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-2xl bg-slate-50 p-3">
+                    <p className="text-lg font-black text-slate-950">{value}</p>
+                    <p className="text-[10px] font-bold text-slate-500">{label}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -325,6 +404,68 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <footer id="contact" className="relative overflow-hidden bg-slate-950 px-5 py-14 text-white sm:px-6 lg:px-8">
+        <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,#2563eb,transparent_28%),radial-gradient(circle_at_80%_0%,#f97316,transparent_24%)]" />
+        <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1fr_0.9fr]">
+          <div>
+            <Link href="/" className="inline-flex items-center gap-3" aria-label="TravelDesk Pro home">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white shadow-sm">
+                <img src="/images/icon traveldesk.png" alt="" className="h-8 w-8 object-contain" />
+              </span>
+              <span className="text-xl font-black tracking-tight">
+                TravelDesk<span className="text-[#F97316]">Pro</span>
+              </span>
+            </Link>
+            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">
+              The modern operating system for travel agencies in Oman, built for bookings, customers, invoices, agents, and reporting.
+            </p>
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              <a href="mailto:admin@traveldeskpro.app" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-4 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.08]">
+                <Mail className="h-5 w-5 text-blue-300" />
+                admin@traveldeskpro.app
+              </a>
+              <a href="tel:+96875135022" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-4 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.08]">
+                <Phone className="h-5 w-5 text-blue-300" />
+                +968-75135022
+              </a>
+              <a href={whatsappHref} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/15">
+                <MessageCircle className="h-5 w-5 text-emerald-300" />
+                WhatsApp +968-75135022
+              </a>
+              <a href="https://www.traveldeskpro.app" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-4 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.08]">
+                <ExternalLink className="h-5 w-5 text-blue-300" />
+                www.traveldeskpro.app
+              </a>
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-5 text-sm font-semibold text-slate-400">
+              <a href="#features" className="hover:text-white">Features</a>
+              <a href="#pricing" className="hover:text-white">Pricing</a>
+              <a href="#faq" className="hover:text-white">FAQ</a>
+              <Link href="/login" className="hover:text-white">Login</Link>
+              <Link href="/demo" className="hover:text-white">Interactive demo</Link>
+            </div>
+          </div>
+
+          <div className="lg:justify-self-end">
+            <DemoRequestForm />
+          </div>
+        </div>
+        <div className="relative mx-auto mt-10 flex max-w-7xl flex-col gap-4 border-t border-white/10 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} TravelDesk Pro. All rights reserved.</p>
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 font-black text-slate-950 shadow-xl shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-400"
+          >
+            <MessageCircle className="h-5 w-5" />
+            WhatsApp us
+          </a>
+        </div>
+      </footer>
     </main>
   );
 }
