@@ -21,6 +21,7 @@ import {
   Trash2,
   Save,
   MoreVertical,
+  Plus,
 } from "lucide-react";
 
 type PlanId = "starter" | "professional" | "enterprise";
@@ -56,6 +57,7 @@ type AuditLogRow = {
 };
 
 type ModalState =
+  | { type: "createAgency" }
   | { type: "view"; agency: AgencyRow }
   | { type: "edit"; agency: AgencyRow }
   | { type: "changePlan"; agency: AgencyRow }
@@ -106,6 +108,17 @@ export default function AdminPage() {
   });
   const [agencyPlan, setAgencyPlan] = useState<PlanId>("starter");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [createForm, setCreateForm] = useState({
+    agencyName: "",
+    ownerName: "",
+    ownerEmail: "",
+    ownerPhone: "",
+    temporaryPassword: "",
+    plan: "starter" as PlanId,
+    status: "trial" as AgencyRow["status"],
+    currency: "OMR",
+    language: "en" as "en" | "ar",
+  });
   const [planForm, setPlanForm] = useState({
     name: "",
     monthlyPrice: "",
@@ -289,6 +302,72 @@ export default function AdminPage() {
     return Math.floor(parsed);
   };
 
+  const resetCreateForm = () => {
+    setCreateForm({
+      agencyName: "",
+      ownerName: "",
+      ownerEmail: "",
+      ownerPhone: "",
+      temporaryPassword: "",
+      plan: "starter",
+      status: "trial",
+      currency: "OMR",
+      language: "en",
+    });
+  };
+
+  const createAgency = async () => {
+    setActionError(null);
+    setActionMessage(null);
+    if (!isSuperAdmin) {
+      setActionError("Only super_admin can create agencies.");
+      return;
+    }
+
+    const required = [
+      createForm.agencyName,
+      createForm.ownerName,
+      createForm.ownerEmail,
+      createForm.ownerPhone,
+      createForm.temporaryPassword,
+    ];
+    if (required.some((value) => !value.trim())) {
+      setActionError("Complete all required fields.");
+      return;
+    }
+    if (!createForm.ownerEmail.includes("@")) {
+      setActionError("Enter a valid owner email.");
+      return;
+    }
+    if (createForm.temporaryPassword.length < 8) {
+      setActionError("Temporary password must be at least 8 characters.");
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const response = await fetch("/api/saas-admin/agencies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(createForm),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to create agency.");
+      }
+
+      await loadAdminData();
+      setActionMessage("Agency created.");
+      setTimeout(() => setActionMessage(null), 2500);
+      resetCreateForm();
+      closeModal();
+    } catch (err) {
+      setActionError(getActionErrorMessage(err));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const updateAgency = async () => {
     if (modal?.type !== "edit") return;
     await runAdminAction(async () => {
@@ -317,16 +396,16 @@ export default function AdminPage() {
     }, "Agency plan changed.");
   };
 
-  const updateAgencyStatus = async (selected: AgencyRow, status: "active" | "suspended") => {
+  const updateAgencyStatus = async (selected: AgencyRow, status: AgencyRow["status"]) => {
     setOpenMenuAgencyId(null);
     await runAdminAction(async () => {
-      const rpcName = status === "active" ? "saas_admin_activate_agency" : "saas_admin_suspend_agency";
-      const { error } = await supabase!.rpc(rpcName, {
+      const { error } = await supabase!.rpc("saas_admin_set_agency_status", {
         p_agency_id: selected.id,
-        p_notes: `${status === "active" ? "Activated" : "Suspended"} from SaaS Admin`,
+        p_status: status,
+        p_notes: `Set agency status to ${status} from SaaS Admin`,
       });
       if (error) throw error;
-    }, status === "active" ? "Agency activated." : "Agency suspended.");
+    }, status === "active" ? "Agency activated." : status === "trial" ? "Agency set to trial." : "Agency suspended.");
   };
 
   const deleteAgency = async () => {
@@ -403,14 +482,25 @@ export default function AdminPage() {
               Plans
             </button>
           </div>
-          <div className="relative max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search agencies..."
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
-            />
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            {activeTab === "agencies" && (
+              <button
+                onClick={() => openModal({ type: "createAgency" })}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-deep-blue"
+              >
+                <Plus className="h-4 w-4" />
+                Create Agency
+              </button>
+            )}
+            <div className="relative max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search agencies..."
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              />
+            </div>
           </div>
         </div>
 
@@ -494,15 +584,15 @@ export default function AdminPage() {
                             <button onClick={() => openChangePlan(a)} className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
                               Change Plan
                             </button>
-                            {a.status === "suspended" ? (
-                              <button disabled={actionLoading} onClick={() => updateAgencyStatus(a, "active")} className="block w-full px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">
-                                Activate
-                              </button>
-                            ) : (
-                              <button disabled={actionLoading} onClick={() => openModal({ type: "confirmStatus", agency: a, status: "suspended" })} className="block w-full px-3 py-2 text-left text-sm text-amber-700 hover:bg-amber-50 disabled:opacity-50">
-                                Suspend
-                              </button>
-                            )}
+                            <button disabled={actionLoading || a.status === "active"} onClick={() => updateAgencyStatus(a, "active")} className="block w-full px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                              Activate
+                            </button>
+                            <button disabled={actionLoading || a.status === "trial"} onClick={() => updateAgencyStatus(a, "trial")} className="block w-full px-3 py-2 text-left text-sm text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                              Set Trial
+                            </button>
+                            <button disabled={actionLoading || a.status === "suspended"} onClick={() => openModal({ type: "confirmStatus", agency: a, status: "suspended" })} className="block w-full px-3 py-2 text-left text-sm text-amber-700 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                              Suspend
+                            </button>
                             <div className="my-1 border-t border-slate-100" />
                             <button onClick={() => openModal({ type: "delete", agency: a })} className="block w-full px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50">
                               Delete
@@ -615,6 +705,73 @@ export default function AdminPage() {
             {actionError && (
               <div className="mx-5 mt-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {actionError}
+              </div>
+            )}
+            {modal.type === "createAgency" && (
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Plus className="w-5 h-5 text-brand" />
+                  <div>
+                    <h2 className="font-bold text-navy">Create Agency</h2>
+                    <p className="text-xs text-slate-500">Create the agency, owner login, and owner profile.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Agency Name *</label>
+                    <input value={createForm.agencyName} onChange={(e) => setCreateForm((prev) => ({ ...prev, agencyName: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Owner Name *</label>
+                    <input value={createForm.ownerName} onChange={(e) => setCreateForm((prev) => ({ ...prev, ownerName: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Owner Email *</label>
+                    <input type="email" value={createForm.ownerEmail} onChange={(e) => setCreateForm((prev) => ({ ...prev, ownerEmail: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Owner Phone *</label>
+                    <input value={createForm.ownerPhone} onChange={(e) => setCreateForm((prev) => ({ ...prev, ownerPhone: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Temporary Password *</label>
+                    <input type="password" value={createForm.temporaryPassword} onChange={(e) => setCreateForm((prev) => ({ ...prev, temporaryPassword: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Plan</label>
+                    <select value={createForm.plan} onChange={(e) => setCreateForm((prev) => ({ ...prev, plan: e.target.value as PlanId }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
+                      <option value="starter">Starter</option>
+                      <option value="professional">Professional</option>
+                      <option value="enterprise">Enterprise</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <select value={createForm.status} onChange={(e) => setCreateForm((prev) => ({ ...prev, status: e.target.value as AgencyRow["status"] }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
+                      <option value="trial">Trial</option>
+                      <option value="active">Active</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
+                    <input value={createForm.currency} onChange={(e) => setCreateForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
+                    <select value={createForm.language} onChange={(e) => setCreateForm((prev) => ({ ...prev, language: e.target.value as "en" | "ar" }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
+                      <option value="en">English</option>
+                      <option value="ar">Arabic</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                  <button onClick={closeModal} className="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
+                  <button onClick={createAgency} disabled={actionLoading} className="px-4 py-2 rounded-lg bg-brand text-white text-sm font-medium hover:bg-deep-blue disabled:opacity-50 flex items-center gap-2">
+                    <Save className="w-4 h-4" />
+                    {actionLoading ? "Creating..." : "Create Agency"}
+                  </button>
+                </div>
               </div>
             )}
             {modal.type === "view" && (
