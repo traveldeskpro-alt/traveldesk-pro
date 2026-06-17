@@ -88,7 +88,7 @@ const faqs = [
   },
 ];
 
-const whatsappHref = "https://wa.me/96875135022";
+const whatsappHref = "https://api.whatsapp.com/send?phone=96875135022";
 
 export default function Home() {
   return (

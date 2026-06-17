@@ -3,7 +3,7 @@
 import { FormEvent } from "react";
 import { ArrowRight } from "lucide-react";
 
-const WHATSAPP_NUMBER = "96875135022";
+const WHATSAPP_URL = "https://api.whatsapp.com/send?phone=96875135022";
 
 export default function DemoRequestForm() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -16,7 +16,7 @@ export default function DemoRequestForm() {
     const message = encodeURIComponent(
       `Hello TravelDesk Pro, I want to request a demo.\nName: ${name}\nEmail: ${email}\nPhone: ${phone}`
     );
-    const fullUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
+    const fullUrl = `${WHATSAPP_URL}&text=${message}`;
 
     window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
