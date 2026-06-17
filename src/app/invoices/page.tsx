@@ -300,7 +300,7 @@ export default function InvoicesPage() {
     const vars = getInvoiceWhatsAppVars(showWhatsApp, branding);
     const { body } = buildMessage(type, vars);
     const phone = showWhatsApp.customer_phone || '';
-    if (!phone) { alert('Customer phone number is required'); return; }
+    if (!phone) { alert('Customer phone number required to share invoice.'); return; }
     openWhatsAppWeb(phone, body);
     setShowWhatsApp(null);
   };

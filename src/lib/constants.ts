@@ -133,7 +133,7 @@ export const WHATSAPP_TEMPLATES = {
   },
   invoice_message: {
     name: "Invoice Message",
-    body: "Hello {{customer_name}},\n\nPlease find your invoice {{invoice_number}} from {{agency_name}}.\n\nAmount: {{amount}}\nDue Date: {{due_date}}\n\nThank you.",
+    body: "Hello {{customer_name}},\n\nYour invoice {{invoice_number}} from {{agency_name}} is ready.\n\nTotal Amount:\n{{total_amount}}\n\nThank you.",
   },
   visa_reminder: {
     name: "Visa Reminder",

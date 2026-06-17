@@ -19,8 +19,8 @@ export function buildMessage(
 
 export function openWhatsAppWeb(phone: string, message: string): void {
   const clean = phone.replace(/\D/g, '').replace(/^0/, '');
-  const url = `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
-  window.open(url, '_blank');
+  const url = `https://api.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 export function sendViaAPI(
@@ -82,6 +82,7 @@ export function getInvoiceWhatsAppVars(
     customer_name: invoice.customer_name,
     invoice_number: invoice.invoice_number,
     amount: `${invoice.total.toFixed(2)} ${invoice.currency}`,
+    total_amount: `${invoice.currency} ${invoice.total.toFixed(2)}`,
     due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '—',
     agency_name: branding.name || 'TravelDesk Pro',
   };
