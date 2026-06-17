@@ -19,7 +19,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { DarkModeProvider } from "@/context/DarkModeContext";
 import {
   LayoutDashboard, Ticket, Users, FileText, UserCheck,
-  BarChart3, Calendar, Menu, X, Plane, ExternalLink, Sparkles,
+  BarChart3, Calendar, Settings, Menu, X, Plane, ExternalLink, Sparkles,
 } from "lucide-react";
 
 const NAV = [
@@ -30,6 +30,7 @@ const NAV = [
   { label: "Agents",    href: "/demo/agents",    icon: UserCheck },
   { label: "Reports",   href: "/demo/reports",   icon: BarChart3 },
   { label: "Calendar",  href: "/demo/calendar",  icon: Calendar },
+  { label: "Settings",  href: "/demo/settings",  icon: Settings },
 ];
 
 // Reads the demo booking count from localStorage and re-reads it when

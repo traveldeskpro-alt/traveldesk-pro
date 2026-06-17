@@ -228,6 +228,7 @@ export interface Database {
           issued_at: string;
           due_date: string;
           paid_at: string | null;
+          agency_branding: Json | null;
           created_at: string;
         };
         Insert: {
@@ -245,6 +246,7 @@ export interface Database {
           issued_at?: string;
           due_date?: string;
           paid_at?: string | null;
+          agency_branding?: Json | null;
           created_at?: string;
         };
         Update: {
@@ -262,6 +264,7 @@ export interface Database {
           issued_at?: string;
           due_date?: string;
           paid_at?: string | null;
+          agency_branding?: Json | null;
           created_at?: string;
         };
       };
@@ -339,6 +342,44 @@ export interface Database {
           reference?: string | null;
           notes?: string | null;
           created_at?: string;
+        };
+      };
+      calendar_events: {
+        Row: {
+          id: string;
+          agency_id: string;
+          title: string;
+          description: string | null;
+          start_at: string;
+          end_at: string | null;
+          type: 'meeting' | 'deadline' | 'reminder' | 'travel' | 'booking';
+          customer_name: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agency_id: string;
+          title: string;
+          description?: string | null;
+          start_at: string;
+          end_at?: string | null;
+          type?: 'meeting' | 'deadline' | 'reminder' | 'travel' | 'booking';
+          customer_name?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          agency_id?: string;
+          title?: string;
+          description?: string | null;
+          start_at?: string;
+          end_at?: string | null;
+          type?: 'meeting' | 'deadline' | 'reminder' | 'travel' | 'booking';
+          customer_name?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
       subscription_plans: {
