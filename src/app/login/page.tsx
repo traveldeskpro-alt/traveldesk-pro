@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import {
-  Eye, EyeOff, Globe, ArrowRight, Sparkles, Users, Plane, Hotel,
+  Eye, EyeOff, Globe, ArrowRight, Users, Plane, Hotel,
   FileCheck, Receipt, Building2, BarChart3, Radar, MessageCircle, Search,
 } from "lucide-react";
 
@@ -194,31 +194,6 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white px-4 text-sm text-slate-400">or</span>
-              </div>
-            </div>
-
-            <Link
-              href="/demo"
-              className="w-full py-3.5 rounded-xl border border-slate-200 bg-[#F6F8FC] text-slate-700 font-semibold text-[15px] hover:bg-slate-100 hover:border-slate-300 transition-all flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4 text-[#F97316]" />
-              Explore Demo Workspace
-            </Link>
-            <p className="text-center text-xs text-slate-400 mt-2.5">
-              See how TravelDesk Pro works with sample data.
-            </p>
-
-            <div className="mt-6">
-              <Link href="/signup" className="block w-full text-center py-3 rounded-xl border border-[#2563EB]/20 bg-[#2563EB]/5 text-[#2563EB] font-semibold text-sm hover:bg-[#2563EB]/10 transition-all">
-                Create Account — Start Free Trial
-              </Link>
-            </div>
           </div>
 
           <div className="mt-5 text-center">

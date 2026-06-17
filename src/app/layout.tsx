@@ -6,8 +6,18 @@ import { DarkModeProvider } from "@/context/DarkModeContext";
 import AppShell from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "TravelDesk Pro - Smart. Simple. Powerful.",
+  title: "TravelDesk Pro | Travel Agency Management System",
+  applicationName: "TravelDesk Pro",
   description: "SaaS platform for travel agencies to manage bookings, invoices, agents, and commissions.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+  },
 };
 
 export default function RootLayout({
