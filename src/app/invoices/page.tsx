@@ -5,7 +5,7 @@ import { useInvoices, InvoiceItem, InvoiceRecord, useInvoiceSettings, useAgencyB
 import { usePermissions } from '@/hooks/useDataStore';
 import { useAuth } from '@/context/AuthContext';
 import { useDataMode } from '@/context/DataModeContext';
-import { Search, Plus, X, Save, Printer, Download, MessageCircle, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Send, Smartphone, MoreHorizontal, Eye, Pencil, Copy } from 'lucide-react';
+import { Search, Plus, X, Save, Printer, Download, MessageCircle, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Send, Smartphone } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { CURRENCIES, getCurrencySymbol, INVOICE_STATUS_COLORS, WHATSAPP_TEMPLATES } from '@/lib/constants';
 import { generateInvoicePDF } from '@/components/invoice/InvoicePDF';
@@ -68,7 +68,6 @@ export default function InvoicesPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
-  const [openActionsId, setOpenActionsId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     customer_id: '',
@@ -563,39 +562,28 @@ export default function InvoicesPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">
-                        <div className="relative inline-block text-left">
-                          <button
-                            type="button"
-                            onClick={() => setOpenActionsId((prev) => (prev === inv.id ? null : inv.id))}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                          >
-                            Actions <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                          {openActionsId === inv.id && (
-                            <div className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10 p-1 text-left">
-                              <button onClick={() => { setShowDetail(inv); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700">
-                                <Eye className="w-4 h-4" /> View Invoice
-                              </button>
-                              <button onClick={() => { openEdit(inv); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700">
-                                <Pencil className="w-4 h-4" /> Edit Invoice
-                              </button>
-                              <button onClick={() => { downloadInvoicePdf(inv); setOpenActionsId(null); }} disabled={downloadingInvoiceId === inv.id} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700 disabled:opacity-60">
-                                <Download className="w-4 h-4" /> Download PDF
-                              </button>
-                              <button onClick={() => { setShowWhatsApp(inv); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-emerald-50 text-slate-700">
-                                <MessageCircle className="w-4 h-4" /> Share WhatsApp
-                              </button>
-                              <button onClick={() => { duplicateInvoice(inv); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700">
-                                <Copy className="w-4 h-4" /> Duplicate Invoice
-                              </button>
-                              {can('delete') && (
-                                <button onClick={() => { handleDelete(inv.id); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-red-50 text-red-600">
-                                  <Trash2 className="w-4 h-4" /> Delete Invoice
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <select
+                          value=""
+                          onChange={async (e) => {
+                            const action = e.target.value;
+                            e.target.value = '';
+                            if (action === 'view') setShowDetail(inv);
+                            if (action === 'edit') openEdit(inv);
+                            if (action === 'download') await downloadInvoicePdf(inv);
+                            if (action === 'share') setShowWhatsApp(inv);
+                            if (action === 'duplicate') await duplicateInvoice(inv);
+                            if (action === 'delete') handleDelete(inv.id);
+                          }}
+                          className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
+                        >
+                          <option value="">Actions</option>
+                          <option value="view">View Invoice</option>
+                          <option value="edit">Edit Invoice</option>
+                          <option value="download">Download PDF</option>
+                          <option value="share">Share WhatsApp</option>
+                          <option value="duplicate">Duplicate Invoice</option>
+                          {can('delete') && <option value="delete">Delete Invoice</option>}
+                        </select>
                       </td>
                     </tr>
                   );
