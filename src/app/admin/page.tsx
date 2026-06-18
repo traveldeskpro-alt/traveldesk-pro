@@ -205,7 +205,7 @@ export default function AdminPage() {
         <div className="text-center">
           <Lock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h2 className="text-lg font-bold text-navy">Access Denied</h2>
-          <p className="text-sm text-slate-500 mt-1">You don't have permission to view this page.</p>
+          <p className="text-sm text-slate-500 mt-1">You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );

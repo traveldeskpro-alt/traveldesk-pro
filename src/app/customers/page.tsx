@@ -185,7 +185,7 @@ export default function CustomersPage() {
           </div>
           {filtered.length === 0 && query && (
             <div className="p-8 text-center text-slate-500">
-              <p>No results for "{query}"</p>
+              <p>No results for &ldquo;{query}&rdquo;</p>
               <button onClick={() => setQuery('')} className="text-brand text-sm mt-1 hover:underline">Clear search</button>
             </div>
           )}

@@ -920,7 +920,7 @@ export default function SettingsPage() {
                     onChange={(e) => updateWhatsAppSettings({ provider: "wame", enabled: e.target.checked })}
                     className="w-4 h-4 rounded border-slate-300 text-brand focus:ring-brand"
                   />
-                  Remember wa.me as this agency's WhatsApp sharing preference
+                  Remember wa.me as this agency&apos;s WhatsApp sharing preference
                 </label>
                 <p className="text-xs text-slate-500">API providers are not connected in this app, so invoice sharing does not claim WhatsApp Business API delivery.</p>
               </div>

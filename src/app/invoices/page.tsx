@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useInvoices, InvoiceItem, useInvoiceSettings, useAgencyBranding, useCustomers } from '@/hooks/useDataStore';
+import { useInvoices, InvoiceItem, useInvoiceSettings, useAgencyBranding, useCustomers, generateInvoiceNumber } from '@/hooks/useDataStore';
 import { usePermissions } from '@/hooks/useDataStore';
 import { useAuth } from '@/context/AuthContext';
 import { useDataMode } from '@/context/DataModeContext';
@@ -119,8 +119,19 @@ export default function InvoicesPage() {
     }));
   };
 
-  const openCreate = () => {
-    const num = generateNumber();
+  const openCreate = async () => {
+    setSaveError(null);
+    let num: string;
+    try {
+      num = await generateInvoiceNumber(
+        user?.agencyId ?? '',
+        invoiceSettings.prefix,
+        useLocalStorage,
+        generateNumber,
+      );
+    } catch {
+      num = generateNumber();
+    }
     setForm({
       customer_id: '',
       customer_name: '',
@@ -142,7 +153,6 @@ export default function InvoicesPage() {
       due_date: getDefaultDueDate(),
       notes: invoiceSettings.defaultNotes,
     });
-    setSaveError(null);
     setShowModal(true);
   };
 
