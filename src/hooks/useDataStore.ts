@@ -436,7 +436,7 @@ export interface BookingRecord {
   agency_id: string;
   customer_id: string;
   customer_name: string;
-  type: 'air_ticket' | 'visa' | 'hotel' | 'group_tour';
+  type: 'air_ticket' | 'visa' | 'hotel' | 'group_tour' | 'insurance' | 'other_service';
   details: string;
   cost_price: number;
   sale_price: number;
@@ -449,11 +449,25 @@ export interface BookingRecord {
   notes?: string;
   created_at: string;
   updated_at: string;
+  // Legacy flight fields (existing columns)
   pnr?: string | null;
   ticket_number?: string | null;
   airline?: string | null;
   route?: string | null;
+  // New flight-specific fields (migration 012)
+  airline_code?: string | null;
+  route_from?: string | null;
+  route_to?: string | null;
+  departure_date?: string | null;
+  return_date?: string | null;
+  passenger_name?: string | null;
+  // Visa fields
   visa_country?: string | null;
+  visa_type?: string | null;
+  application_date?: string | null;
+  expected_approval_date?: string | null;
+  passport_number?: string | null;
+  // Other type-specific legacy fields
   hotel_name?: string | null;
   check_in?: string | null;
   check_out?: string | null;

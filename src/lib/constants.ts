@@ -98,10 +98,26 @@ export const COMMISSION_BASES = [
 ] as const;
 
 export const BOOKING_TYPES = [
-  { id: "air_ticket", label: "Air Ticket" },
+  { id: "air_ticket", label: "Flight Ticket" },
   { id: "visa", label: "Visa" },
   { id: "hotel", label: "Hotel" },
-  { id: "group_tour", label: "Group Tour" },
+  { id: "group_tour", label: "Tour Package" },
+  { id: "insurance", label: "Insurance" },
+  { id: "other_service", label: "Other Service" },
+];
+
+export const VISA_TYPES = [
+  { id: "visit_visa", label: "Visit Visa" },
+  { id: "tourist_visa", label: "Tourist Visa" },
+  { id: "business_visa", label: "Business Visa" },
+  { id: "work_visa", label: "Work Visa" },
+  { id: "family_visit_visa", label: "Family Visit Visa" },
+  { id: "student_visa", label: "Student Visa" },
+  { id: "transit_visa", label: "Transit Visa" },
+  { id: "umrah_visa", label: "Umrah Visa" },
+  { id: "medical_visa", label: "Medical Visa" },
+  { id: "residence_visa", label: "Residence Visa" },
+  { id: "other", label: "Other" },
 ];
 
 export const PAYMENT_STATUSES = [
