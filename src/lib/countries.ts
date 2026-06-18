@@ -1,0 +1,126 @@
+export const COUNTRIES: string[] = [
+  // Gulf & Middle East
+  'Oman',
+  'UAE',
+  'Saudi Arabia',
+  'Qatar',
+  'Bahrain',
+  'Kuwait',
+  'Iraq',
+  'Iran',
+  'Jordan',
+  'Lebanon',
+  'Syria',
+  'Yemen',
+  'Palestine',
+  'Israel',
+  'Turkey',
+  'Egypt',
+  'Libya',
+  'Tunisia',
+  'Algeria',
+  'Morocco',
+  'Sudan',
+  'Somalia',
+
+  // South Asia
+  'India',
+  'Pakistan',
+  'Bangladesh',
+  'Sri Lanka',
+  'Nepal',
+  'Bhutan',
+  'Maldives',
+  'Afghanistan',
+
+  // Southeast Asia
+  'Philippines',
+  'Indonesia',
+  'Malaysia',
+  'Thailand',
+  'Vietnam',
+  'Singapore',
+  'Myanmar',
+  'Cambodia',
+  'Laos',
+
+  // East Asia
+  'China',
+  'Japan',
+  'South Korea',
+  'North Korea',
+  'Hong Kong',
+  'Taiwan',
+  'Mongolia',
+
+  // Central Asia
+  'Kazakhstan',
+  'Uzbekistan',
+  'Kyrgyzstan',
+  'Tajikistan',
+  'Turkmenistan',
+  'Azerbaijan',
+  'Armenia',
+  'Georgia',
+
+  // East Africa
+  'Ethiopia',
+  'Kenya',
+  'Tanzania',
+  'Uganda',
+  'Rwanda',
+  'Djibouti',
+  'Eritrea',
+
+  // West & Central Africa
+  'Nigeria',
+  'Ghana',
+  'Senegal',
+  'Cameroon',
+  'Ivory Coast',
+  'South Africa',
+  'Zimbabwe',
+
+  // Europe
+  'United Kingdom',
+  'Germany',
+  'France',
+  'Italy',
+  'Spain',
+  'Portugal',
+  'Netherlands',
+  'Belgium',
+  'Switzerland',
+  'Austria',
+  'Sweden',
+  'Norway',
+  'Denmark',
+  'Finland',
+  'Poland',
+  'Czech Republic',
+  'Hungary',
+  'Romania',
+  'Greece',
+  'Russia',
+  'Ukraine',
+
+  // Americas
+  'United States',
+  'Canada',
+  'Mexico',
+  'Brazil',
+  'Argentina',
+  'Colombia',
+  'Chile',
+  'Peru',
+
+  // Oceania
+  'Australia',
+  'New Zealand',
+  'Fiji',
+];
+
+export const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({
+  value: c,
+  label: c,
+}));

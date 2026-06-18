@@ -12,6 +12,8 @@ const typeStyles = {
   visa: { icon: FileCheck, color: "bg-amber-50 text-amber-700 border-amber-200" },
   hotel: { icon: Hotel, color: "bg-purple-50 text-purple-700 border-purple-200" },
   group_tour: { icon: Users, color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  insurance: { icon: CalendarDays, color: "bg-purple-50 text-purple-700 border-purple-200" },
+  other_service: { icon: CalendarDays, color: "bg-pink-50 text-pink-700 border-pink-200" },
   meeting: { icon: Briefcase, color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
   deadline: { icon: Bell, color: "bg-red-50 text-red-700 border-red-200" },
   reminder: { icon: Bell, color: "bg-amber-50 text-amber-700 border-amber-200" },

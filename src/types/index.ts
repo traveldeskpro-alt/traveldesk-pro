@@ -1,6 +1,6 @@
 export type Role = "super_admin" | "owner" | "admin" | "manager" | "agent" | "accountant" | "viewer";
 
-export type BookingType = "air_ticket" | "visa" | "hotel" | "group_tour";
+export type BookingType = "air_ticket" | "visa" | "hotel" | "group_tour" | "insurance" | "other_service";
 
 export type PaymentStatus = "paid" | "pending" | "refund";
 
@@ -70,8 +70,18 @@ export interface Booking {
   pnr?: string;
   ticketNumber?: string;
   airline?: string;
+  airlineCode?: string;
   route?: string;
+  routeFrom?: string;
+  routeTo?: string;
+  departureDate?: string;
+  returnDate?: string;
+  passengerName?: string;
   visaCountry?: string;
+  visaType?: string;
+  applicationDate?: string;
+  expectedApprovalDate?: string;
+  passportNumber?: string;
   hotelName?: string;
   checkIn?: string;
   checkOut?: string;
