@@ -123,7 +123,7 @@ export default function AgentsPage() {
                   </tbody>
                 </table>
               </div>
-              {filtered.length === 0 && query && <div className="p-8 text-center text-slate-500"><p>No results for "{query}"</p></div>}
+              {filtered.length === 0 && query && <div className="p-8 text-center text-slate-500"><p>No results for &ldquo;{query}&rdquo;</p></div>}
             </Card>
           </div>
           <div className="space-y-4">

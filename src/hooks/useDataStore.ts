@@ -703,9 +703,17 @@ export function useInvoices() {
         agency_id: newRecord.agency_id,
         customer_id: newRecord.customer_id,
         customer_name: newRecord.customer_name,
+        customer_passport: newRecord.customer_passport ?? null,
+        customer_phone: newRecord.customer_phone ?? null,
+        customer_email: newRecord.customer_email ?? null,
+        customer_nationality: newRecord.customer_nationality ?? null,
         invoice_number: newRecord.invoice_number,
+        prefix: newRecord.prefix,
+        sequence: newRecord.sequence,
         items: newRecord.items,
         subtotal: newRecord.subtotal,
+        tax_enabled: newRecord.tax_enabled,
+        tax_percentage: newRecord.tax_percentage,
         tax: newRecord.tax,
         total: newRecord.total,
         currency: newRecord.currency,
@@ -713,6 +721,7 @@ export function useInvoices() {
         issued_at: newRecord.issued_at,
         due_date: newRecord.due_date,
         paid_at: newRecord.paid_at ?? null,
+        notes: newRecord.notes ?? null,
         agency_branding: newRecord.agency_branding ?? null,
         created_at: newRecord.created_at,
       };
@@ -909,4 +918,27 @@ export function usePermissions() {
   }, [role]);
 
   return { role, can };
+}
+
+// ========== INVOICE NUMBER GENERATION ==========
+// In production (Supabase) mode, calls the server-side RPC
+// get_next_invoice_number() for an atomic, collision-free sequence.
+// Falls back to the provided localStorage generator in demo/offline mode.
+export async function generateInvoiceNumber(
+  agencyId: string,
+  prefix: string,
+  useLocalStorageMode: boolean,
+  localGenerateFn: () => string,
+): Promise<string> {
+  if (!useLocalStorageMode && isSupabaseEnabled && supabase) {
+    const { data, error } = await supabase.rpc('get_next_invoice_number', {
+      p_agency_id: agencyId,
+      p_prefix: prefix,
+    });
+    if (!error && typeof data === 'string' && data.length > 0) {
+      return data;
+    }
+    // If the RPC fails (e.g. migration not yet applied), fall through to localStorage.
+  }
+  return localGenerateFn();
 }

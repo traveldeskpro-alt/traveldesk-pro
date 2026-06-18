@@ -354,7 +354,7 @@ export default function BookingsPage() {
           </div>
           {filtered.length === 0 && query && (
             <div className="p-8 text-center text-slate-500">
-              <p>No results for "{query}"</p>
+              <p>No results for &ldquo;{query}&rdquo;</p>
               <button onClick={() => setQuery('')} className="text-brand text-sm mt-1 hover:underline">Clear search</button>
             </div>
           )}
@@ -404,7 +404,7 @@ export default function BookingsPage() {
                   {/* Warn when editing a booking whose customer was deleted */}
                   {editing && form.customer_id && !customers.find((c) => c.id === form.customer_id) && (
                     <p className="text-xs text-amber-600 mt-1">
-                      Previous customer "{form.customer_name}" is no longer in the list. Select a replacement or keep the existing record.
+                      Previous customer &ldquo;{form.customer_name}&rdquo; is no longer in the list. Select a replacement or keep the existing record.
                     </p>
                   )}
                 </div>
