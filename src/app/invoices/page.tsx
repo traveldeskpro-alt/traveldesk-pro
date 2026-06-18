@@ -394,12 +394,17 @@ export default function InvoicesPage() {
   };
 
   const duplicateInvoice = async (invoice: typeof invoices[0]) => {
-    const nextNumber = generateNumber();
+    const prefix = invoiceSettings.prefix || invoice.prefix || 'INV';
+    const nextSequence = invoices.reduce((max, current) => {
+      const match = current.invoice_number?.match(/(\d+)$/);
+      return match ? Math.max(max, Number(match[1])) : max;
+    }, 0) + 1;
+    const nextNumber = `${prefix}-${String(nextSequence).padStart(4, '0')}`;
     const duplicate = {
       ...invoice,
       invoice_number: nextNumber,
-      prefix: invoiceSettings.prefix,
-      sequence: parseInt(nextNumber.split('-').pop() || '0'),
+      prefix,
+      sequence: nextSequence,
       status: 'pending' as const,
       issued_at: new Date().toISOString(),
       due_date: new Date(`${getDefaultDueDate()}T00:00:00.000Z`).toISOString(),
