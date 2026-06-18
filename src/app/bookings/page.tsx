@@ -2,14 +2,15 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useBookings, useCustomers, BookingRecord } from '@/hooks/useDataStore';
+import { useBookings, useCustomers, useAgents, BookingRecord, calculateCommission } from '@/hooks/useDataStore';
 import { usePermissions } from '@/hooks/useDataStore';
+import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
   Search, Filter, Plus, Plane, FileText, Hotel, Users, X,
-  Save, Calendar, CheckCircle, Edit2
+  Save, Calendar, CheckCircle, Edit2, UserCheck
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { CURRENCIES, BOOKING_TYPES, PAYMENT_STATUSES, PROCESS_STATUSES } from '@/lib/constants';
@@ -66,7 +67,9 @@ function downloadFile(filename: string, contents: string, type: string) {
 export default function BookingsPage() {
   const { bookings, loading, create, update, remove, search } = useBookings();
   const { customers } = useCustomers();
+  const { agents } = useAgents();
   const { can } = usePermissions();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -81,13 +84,15 @@ export default function BookingsPage() {
     details: string; cost_price: string; sale_price: string; agent_commission: string;
     currency: string; payment_status: 'paid' | 'pending' | 'refund';
     process_status: 'pending' | 'processing' | 'approved' | 'rejected' | 'issued';
-    agent_name: string; date: string;
+    agent_id: string; agent_name: string; date: string;
+    issued_by_name: string;
   }>({
     customer_id: '', customer_name: '', type: 'air_ticket',
     details: '', cost_price: '', sale_price: '', agent_commission: '',
     currency: 'OMR', payment_status: 'pending',
-    process_status: 'pending', agent_name: '',
+    process_status: 'pending', agent_id: '', agent_name: '',
     date: new Date().toISOString().split('T')[0],
+    issued_by_name: '',
   });
 
   const resetForm = () => {
@@ -95,7 +100,8 @@ export default function BookingsPage() {
       customer_id: '', customer_name: '', type: 'air_ticket',
       details: '', cost_price: '', sale_price: '', agent_commission: '',
       currency: 'OMR', payment_status: 'pending', process_status: 'pending',
-      agent_name: '', date: new Date().toISOString().split('T')[0],
+      agent_id: '', agent_name: '', date: new Date().toISOString().split('T')[0],
+      issued_by_name: '',
     });
     setEditing(null);
   };
@@ -129,8 +135,10 @@ export default function BookingsPage() {
       currency: b.currency,
       payment_status: b.payment_status,
       process_status: b.process_status,
+      agent_id: b.agent_id || '',
       agent_name: b.agent_name || '',
       date: b.created_at.split('T')[0],
+      issued_by_name: b.issued_by_name || '',
     });
     setEditing(b);
     setSaveError(null);
@@ -144,35 +152,47 @@ export default function BookingsPage() {
     }
     if (!form.sale_price) return;
     setSaveError(null);
+
+    const salePrice = Number(form.sale_price) || 0;
+    const costPrice = Number(form.cost_price) || 0;
+
+    // Look up the selected agent to compute commission_amount from their settings.
+    const selectedAgent = agents.find((a) => a.id === form.agent_id);
+    const commissionAmount = selectedAgent
+      ? calculateCommission(selectedAgent, salePrice, costPrice)
+      : 0;
+
     const data = {
-      // Use the real customer UUID — never generate a fake one.
       customer_id: form.customer_id,
       customer_name: form.customer_name,
       type: form.type,
       details: form.details,
-      cost_price: Number(form.cost_price) || 0,
-      sale_price: Number(form.sale_price) || 0,
+      cost_price: costPrice,
+      sale_price: salePrice,
       agent_commission: Number(form.agent_commission) || 0,
       currency: form.currency,
       payment_status: form.payment_status,
       process_status: form.process_status,
-      agent_id: undefined as string | undefined,
+      agent_id: form.agent_id || undefined,
       agent_name: form.agent_name,
       notes: '',
-    };
+      issued_by_name: form.issued_by_name || null,
+      commission_amount: commissionAmount,
+    } as const;
+
     try {
       if (editing) {
-        // Pass data directly so the customer can be changed in edit mode.
         await update(editing.id, data);
       } else {
-        await create(data);
+        await create({
+          ...data,
+          created_by_name: user?.name ?? null,
+        });
       }
       setShowModal(false);
       resetForm();
-    } catch (err: any) {
-      // Surfaces the Supabase error (FK violation, RLS rejection, etc.)
-      // and the demo booking-limit message.
-      setSaveError(err?.message ?? 'Failed to save booking. Please try again.');
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save booking. Please try again.');
     }
   };
 
@@ -340,7 +360,11 @@ export default function BookingsPage() {
                     </td>
                     <td className="px-5 py-4"><span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border ${statusColors[b.payment_status]}`}>{b.payment_status}</span></td>
                     <td className="px-5 py-4"><span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border ${processColors[b.process_status]}`}>{b.process_status}</span></td>
-                    <td className="px-5 py-4 text-xs text-slate-500">{formatDate(b.created_at)}</td>
+                    <td className="px-5 py-4 text-xs text-slate-500">
+                      <div>{formatDate(b.created_at)}</div>
+                      {b.created_by_name && <div className="text-slate-400 mt-0.5">By: {b.created_by_name}</div>}
+                      {b.issued_by_name && <div className="text-slate-400 mt-0.5">Issued: {b.issued_by_name}</div>}
+                    </td>
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         {can('edit') && <button onClick={() => openEdit(b)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-brand transition-colors" title="Edit"><Edit2 className="w-4 h-4" /></button>}
@@ -430,6 +454,59 @@ export default function BookingsPage() {
                   </select>
                 </div>
               </div>
+
+              {/* Booking Ownership */}
+              <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/30 space-y-3">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
+                  <UserCheck className="w-3.5 h-3.5" /> Ownership
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Assigned Agent</label>
+                    <select
+                      value={form.agent_id}
+                      onChange={(e) => {
+                        const a = agents.find((x) => x.id === e.target.value);
+                        setForm((prev) => ({
+                          ...prev,
+                          agent_id: e.target.value,
+                          agent_name: a?.name ?? '',
+                          agent_commission: a ? String(a.commission_rate) : prev.agent_commission,
+                        }));
+                      }}
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
+                    >
+                      <option value="">— No agent —</option>
+                      {agents.filter((a) => a.active).map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Issued By</label>
+                    <input
+                      value={form.issued_by_name}
+                      onChange={(e) => setForm({ ...form, issued_by_name: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                      placeholder="Ticketing staff name"
+                    />
+                  </div>
+                </div>
+                {!editing && user?.name && (
+                  <p className="text-xs text-slate-400">Created by: <span className="font-medium text-slate-600">{user.name}</span> (auto-recorded)</p>
+                )}
+                {form.agent_id && (() => {
+                  const a = agents.find((x) => x.id === form.agent_id);
+                  if (!a) return null;
+                  const commission = calculateCommission(a, Number(form.sale_price) || 0, Number(form.cost_price) || 0);
+                  return (
+                    <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                      Commission: <strong>{commission.toFixed(3)} OMR</strong> ({a.commission_type === 'fixed' ? 'fixed' : `${a.commission_rate}% of ${a.commission_base === 'profit' ? 'profit' : 'sale'}`})
+                    </p>
+                  );
+                })()}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Payment</label>

@@ -458,6 +458,14 @@ export interface BookingRecord {
   check_in?: string | null;
   check_out?: string | null;
   tour_name?: string | null;
+  // Ownership
+  created_by_name?: string | null;
+  issued_by_name?: string | null;
+  // Per-booking commission
+  commission_amount?: number;
+  commission_paid?: boolean;
+  commission_paid_at?: string | null;
+  commission_notes?: string | null;
 }
 
 export function useBookings() {
@@ -587,7 +595,40 @@ export function useBookings() {
     });
   }, [bookings]);
 
-  return { bookings, loading, create, update, remove, search };
+  // Mark all unpaid commissions for a given agent as paid.
+  const markAgentCommissionPaid = useCallback(async (
+    agentId: string,
+    paidAt: string,
+    notes: string,
+  ) => {
+    const targets = bookings.filter(
+      (b) => b.agent_id === agentId && !b.commission_paid && (b.commission_amount ?? 0) > 0,
+    );
+    if (targets.length === 0) return;
+    const updateData = {
+      commission_paid: true,
+      commission_paid_at: paidAt,
+      commission_notes: notes || null,
+      updated_at: new Date().toISOString(),
+    };
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      const ids = targets.map((b) => b.id);
+      const { error } = await supabase
+        .from('bookings')
+        .update(updateData)
+        .in('id', ids);
+      if (error) throw new Error(error.message);
+    }
+    setBookings((prev) => {
+      const updated = prev.map((b) =>
+        targets.some((t) => t.id === b.id) ? { ...b, ...updateData } : b,
+      );
+      if (useLocalStorage || !isSupabaseEnabled) saveTable(agencyId, 'bookings', updated);
+      return updated;
+    });
+  }, [agencyId, bookings, useLocalStorage]);
+
+  return { bookings, loading, create, update, remove, search, markAgentCommissionPaid };
 }
 
 // ========== INVOICES ==========
@@ -792,12 +833,30 @@ export interface AgentRecord {
   name: string;
   email: string;
   phone: string;
+  commission_type: 'percentage' | 'fixed';
+  commission_base: 'profit' | 'total_sale' | 'service_fee';
   commission_rate: number;
   total_sales: number;
   commission_earned: number;
   commission_paid: number;
   active: boolean;
   created_at: string;
+}
+
+// Calculate the commission amount for a single booking given the agent's settings.
+export function calculateCommission(
+  agent: Pick<AgentRecord, 'commission_type' | 'commission_base' | 'commission_rate'>,
+  salePrice: number,
+  costPrice: number,
+): number {
+  if (agent.commission_type === 'fixed') {
+    return agent.commission_rate;
+  }
+  const base =
+    agent.commission_base === 'profit'
+      ? Math.max(0, salePrice - costPrice)
+      : salePrice;
+  return (base * agent.commission_rate) / 100;
 }
 
 export function useAgents() {
@@ -834,9 +893,9 @@ export function useAgents() {
   const create = useCallback(async (data: Omit<AgentRecord, 'id' | 'agency_id' | 'created_at' | 'total_sales' | 'commission_earned' | 'commission_paid'>) => {
     if (!agencyId) throw new Error('An agency account is required to create agents.');
     const newRecord: AgentRecord = {
+      ...data,
       id: crypto?.randomUUID ? crypto.randomUUID() : generateId(),
       agency_id: agencyId,
-      ...data,
       total_sales: 0,
       commission_earned: 0,
       commission_paid: 0,
@@ -897,6 +956,118 @@ export function useAgents() {
   }, [agencyId]);
 
   return { agents, loading, create, update, remove, recalculateCommissions };
+}
+
+// ========== STAFF (agency users) ==========
+export interface StaffRecord {
+  id: string;
+  agency_id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  role: string;
+  active: boolean;
+  created_at: string;
+}
+
+export function useStaff() {
+  const { user } = useAuth();
+  const { useLocalStorage } = useDataMode();
+  const agencyId = user?.agencyId || (useLocalStorage ? 'demo' : '');
+  const [staff, setStaff] = useState<StaffRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!agencyId) {
+      setStaff([]);
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      supabase
+        .from('users')
+        .select('id,agency_id,email,name,phone,role,active,created_at')
+        .eq('agency_id', agencyId)
+        .order('created_at', { ascending: true })
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          if (!error && data) setStaff(data as StaffRecord[]);
+          setLoading(false);
+        });
+    } else {
+      const key = `tdp_staff_${agencyId}`;
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+      const stored: StaffRecord[] = raw ? JSON.parse(raw) : [];
+      if (stored.length === 0 && user) {
+        const seed: StaffRecord = {
+          id: user.id,
+          agency_id: agencyId,
+          email: user.email,
+          name: user.name,
+          phone: '',
+          role: user.role,
+          active: true,
+          created_at: new Date().toISOString(),
+        };
+        setStaff([seed]);
+      } else {
+        setStaff(stored);
+      }
+      setLoading(false);
+    }
+    return () => { cancelled = true; };
+  }, [agencyId, useLocalStorage, user]);
+
+  const create = useCallback(async (data: Omit<StaffRecord, 'id' | 'agency_id' | 'created_at'>) => {
+    if (!agencyId) throw new Error('An agency account is required to add staff.');
+    const newRecord: StaffRecord = {
+      id: crypto?.randomUUID ? crypto.randomUUID() : generateId(),
+      agency_id: agencyId,
+      ...data,
+      created_at: new Date().toISOString(),
+    };
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      const { data: inserted, error } = await supabase
+        .from('users')
+        .insert({
+          id: newRecord.id,
+          agency_id: agencyId,
+          email: newRecord.email,
+          name: newRecord.name,
+          phone: newRecord.phone ?? null,
+          role: newRecord.role,
+          active: newRecord.active,
+        })
+        .select('id,agency_id,email,name,phone,role,active,created_at')
+        .single();
+      if (error) throw new Error(error.message);
+      setStaff((prev) => [...prev, inserted as StaffRecord]);
+      return inserted as StaffRecord;
+    }
+    setStaff((prev) => {
+      const updated = [...prev, newRecord];
+      if (typeof window !== 'undefined') localStorage.setItem(`tdp_staff_${agencyId}`, JSON.stringify(updated));
+      return updated;
+    });
+    return newRecord;
+  }, [agencyId, useLocalStorage]);
+
+  const update = useCallback(async (id: string, data: Partial<Omit<StaffRecord, 'id' | 'agency_id' | 'created_at'>>) => {
+    if (!useLocalStorage && isSupabaseEnabled && supabase) {
+      const { error } = await supabase.from('users').update(data).eq('id', id);
+      if (error) throw new Error(error.message);
+      setStaff((prev) => prev.map((s) => (s.id === id ? { ...s, ...data } : s)));
+    } else {
+      setStaff((prev) => {
+        const updated = prev.map((s) => (s.id === id ? { ...s, ...data } : s));
+        if (typeof window !== 'undefined') localStorage.setItem(`tdp_staff_${agencyId}`, JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [agencyId, useLocalStorage]);
+
+  return { staff, loading, create, update };
 }
 
 // ========== ROLE-BASED ACCESS ==========

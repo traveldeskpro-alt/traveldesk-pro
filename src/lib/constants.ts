@@ -79,10 +79,23 @@ export const ROLES = [
   { id: "owner", label: "Owner" },
   { id: "admin", label: "Admin" },
   { id: "manager", label: "Manager" },
+  { id: "ticketing_staff", label: "Ticketing Staff" },
+  { id: "sales_staff", label: "Sales Staff" },
   { id: "agent", label: "Agent" },
   { id: "accountant", label: "Accountant" },
   { id: "viewer", label: "Viewer" },
 ];
+
+export const COMMISSION_TYPES = [
+  { id: "percentage", label: "Percentage (%)" },
+  { id: "fixed", label: "Fixed Amount" },
+] as const;
+
+export const COMMISSION_BASES = [
+  { id: "profit", label: "Profit (Sale − Cost)" },
+  { id: "total_sale", label: "Total Sale Amount" },
+  { id: "service_fee", label: "Service Fee" },
+] as const;
 
 export const BOOKING_TYPES = [
   { id: "air_ticket", label: "Air Ticket" },
