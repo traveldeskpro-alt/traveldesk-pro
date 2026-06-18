@@ -19,8 +19,16 @@ export function buildMessage(
 
 export function openWhatsAppWeb(phone: string, message: string): void {
   const clean = phone.replace(/\D/g, '').replace(/^0/, '');
-  const url = `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
-  window.open(url, '_blank');
+  const url = `https://api.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function formatWhatsAppAmount(amount: number, currency: string): string {
+  return amount.toFixed(currency === 'OMR' ? 3 : 2);
+}
+
+function getInvoiceReference(invoice: InvoiceRecord): string {
+  return invoice.reference_number || invoice.agency_branding?.reference_number || invoice.invoice_number;
 }
 
 export function sendViaAPI(
@@ -81,7 +89,9 @@ export function getInvoiceWhatsAppVars(
   return {
     customer_name: invoice.customer_name,
     invoice_number: invoice.invoice_number,
-    amount: `${invoice.total.toFixed(2)} ${invoice.currency}`,
+    amount: `${formatWhatsAppAmount(invoice.total, invoice.currency)} ${invoice.currency}`,
+    total_amount: `${invoice.currency} ${formatWhatsAppAmount(invoice.total, invoice.currency)}`,
+    reference: getInvoiceReference(invoice),
     due_date: invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '—',
     agency_name: branding.name || 'TravelDesk Pro',
   };

@@ -116,7 +116,7 @@ export const INVOICE_STATUS_COLORS = {
 } as const;
 
 export const WHATSAPP_PROVIDERS = [
-  { id: "wame", label: "WhatsApp Web (wa.me)", requiresKey: false },
+  { id: "wame", label: "WhatsApp Web (api.whatsapp.com)", requiresKey: false },
   { id: "ultramsg", label: "UltraMsg", requiresKey: true, requiresInstance: true },
   { id: "greenapi", label: "Green API", requiresKey: true, requiresInstance: true },
   { id: "cloudapi", label: "WhatsApp Cloud API (Meta)", requiresKey: true, requiresInstance: false },
@@ -133,7 +133,7 @@ export const WHATSAPP_TEMPLATES = {
   },
   invoice_message: {
     name: "Invoice Message",
-    body: "Hello {{customer_name}},\n\nPlease find your invoice {{invoice_number}} from {{agency_name}}.\n\nAmount: {{amount}}\nDue Date: {{due_date}}\n\nThank you.",
+    body: "Hello {{customer_name}},\n\nPlease find your invoice.\n\nInvoice No: {{invoice_number}}\nReference: {{reference}}\nAmount: {{total_amount}}\n\nThank you.\n\n{{agency_name}}",
   },
   visa_reminder: {
     name: "Visa Reminder",
