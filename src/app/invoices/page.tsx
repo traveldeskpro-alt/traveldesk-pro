@@ -68,6 +68,7 @@ export default function InvoicesPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
+  const [openActionsId, setOpenActionsId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     customer_id: '',
@@ -557,33 +558,39 @@ export default function InvoicesPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">
-                        <details className="relative inline-block text-left">
-                          <summary className="list-none inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer">
+                        <div className="relative inline-block text-left">
+                          <button
+                            type="button"
+                            onClick={() => setOpenActionsId((prev) => (prev === inv.id ? null : inv.id))}
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                          >
                             Actions <MoreHorizontal className="w-4 h-4" />
-                          </summary>
-                          <div className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10 p-1 text-left">
-                            <button onClick={() => setShowDetail(inv)} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700">
-                              <Eye className="w-4 h-4" /> View Invoice
-                            </button>
-                            <button onClick={() => openEdit(inv)} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700">
-                              <Pencil className="w-4 h-4" /> Edit Invoice
-                            </button>
-                            <button onClick={() => downloadInvoicePdf(inv)} disabled={downloadingInvoiceId === inv.id} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700 disabled:opacity-60">
-                              <Download className="w-4 h-4" /> Download PDF
-                            </button>
-                            <button onClick={() => setShowWhatsApp(inv)} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-emerald-50 text-slate-700">
-                              <MessageCircle className="w-4 h-4" /> Share WhatsApp
-                            </button>
-                            <button onClick={() => duplicateInvoice(inv)} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700">
-                              <Copy className="w-4 h-4" /> Duplicate Invoice
-                            </button>
-                            {can('delete') && (
-                              <button onClick={() => handleDelete(inv.id)} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-red-50 text-red-600">
-                                <Trash2 className="w-4 h-4" /> Delete Invoice
+                          </button>
+                          {openActionsId === inv.id && (
+                            <div className="absolute right-0 z-20 mt-2 w-52 rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10 p-1 text-left">
+                              <button onClick={() => { setShowDetail(inv); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700">
+                                <Eye className="w-4 h-4" /> View Invoice
                               </button>
-                            )}
-                          </div>
-                        </details>
+                              <button onClick={() => { openEdit(inv); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700">
+                                <Pencil className="w-4 h-4" /> Edit Invoice
+                              </button>
+                              <button onClick={() => { downloadInvoicePdf(inv); setOpenActionsId(null); }} disabled={downloadingInvoiceId === inv.id} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700 disabled:opacity-60">
+                                <Download className="w-4 h-4" /> Download PDF
+                              </button>
+                              <button onClick={() => { setShowWhatsApp(inv); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-emerald-50 text-slate-700">
+                                <MessageCircle className="w-4 h-4" /> Share WhatsApp
+                              </button>
+                              <button onClick={() => { duplicateInvoice(inv); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-slate-50 text-slate-700">
+                                <Copy className="w-4 h-4" /> Duplicate Invoice
+                              </button>
+                              {can('delete') && (
+                                <button onClick={() => { handleDelete(inv.id); setOpenActionsId(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-red-50 text-red-600">
+                                  <Trash2 className="w-4 h-4" /> Delete Invoice
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
