@@ -152,7 +152,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <nav className="shrink-0 py-4 px-3 space-y-1">
+        <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3 space-y-1">
           <div className={`px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 ${collapsed && "lg:hidden"}`}>
             Workspace
           </div>
