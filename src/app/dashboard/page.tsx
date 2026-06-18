@@ -13,6 +13,21 @@ import {
   ArrowUpRight, ArrowDownRight, CalendarDays, Plane, FileText, Plus
 } from 'lucide-react';
 
+function formatKpiCurrency(value: number, currency: string): string {
+  if (Math.abs(value) >= 1_000_000) {
+    return `${currency} ${(value / 1_000_000).toFixed(1)}M`;
+  }
+  if (Math.abs(value) >= 10_000) {
+    return `${currency} ${(value / 1_000).toFixed(1)}K`;
+  }
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { bookings, loading: bookingsLoading } = useBookings();
@@ -102,8 +117,8 @@ export default function DashboardPage() {
                 {stat.change}
               </div>
             </div>
-            <p className='truncate text-xl 2xl:text-2xl font-bold text-[#0F172A]' title={String(stat.value)}>
-              {stat.label.includes('Bookings') || stat.label.includes('Agents') ? stat.value : formatCurrency(stat.value, currency)}
+            <p className='whitespace-normal break-words leading-tight text-xl font-bold text-[#0F172A]' title={stat.label.includes('Bookings') || stat.label.includes('Agents') ? String(stat.value) : formatCurrency(stat.value, currency)}>
+              {stat.label.includes('Bookings') || stat.label.includes('Agents') ? stat.value : formatKpiCurrency(stat.value, currency)}
             </p>
             <p className='text-xs leading-snug text-slate-500 mt-1 break-words'>{stat.label}</p>
           </div>
