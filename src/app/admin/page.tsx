@@ -203,9 +203,9 @@ export default function AdminPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <Lock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h2 className="text-lg font-bold text-navy">Access Denied</h2>
-          <p className="text-sm text-slate-500 mt-1">You don&apos;t have permission to view this page.</p>
+          <Lock className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-navy dark:text-white">Access Denied</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">You don&apos;t have permission to view this page.</p>
         </div>
       </div>
     );
@@ -446,39 +446,39 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy">{t("admin")}</h1>
-        <p className="text-slate-500 text-sm mt-1">Manage all agencies and platform settings</p>
+        <h1 className="text-2xl font-bold text-navy dark:text-white">{t("admin")}</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage all agencies and platform settings</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center"><Building2 className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Agencies</p><p className="text-xl font-bold text-navy">{totalAgencies}</p></div>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 flex items-center justify-center"><Building2 className="w-6 h-6" /></div>
+          <div><p className="text-sm text-slate-500 dark:text-slate-400">Agencies</p><p className="text-xl font-bold text-navy dark:text-white">{totalAgencies}</p></div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center"><CheckCircle className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Active</p><p className="text-xl font-bold text-navy">{activeAgencies}</p></div>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center justify-center"><CheckCircle className="w-6 h-6" /></div>
+          <div><p className="text-sm text-slate-500 dark:text-slate-400">Active</p><p className="text-xl font-bold text-navy dark:text-white">{activeAgencies}</p></div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center"><Activity className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Trial</p><p className="text-xl font-bold text-navy">{trialAgencies}</p></div>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 flex items-center justify-center"><Activity className="w-6 h-6" /></div>
+          <div><p className="text-sm text-slate-500 dark:text-slate-400">Trial</p><p className="text-xl font-bold text-navy dark:text-white">{trialAgencies}</p></div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-red-50 text-red-700 flex items-center justify-center"><XCircle className="w-6 h-6" /></div>
-          <div><p className="text-sm text-slate-500">Suspended</p><p className="text-xl font-bold text-navy">{suspendedAgencies}</p></div>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 flex items-center justify-center"><XCircle className="w-6 h-6" /></div>
+          <div><p className="text-sm text-slate-500 dark:text-slate-400">Suspended</p><p className="text-xl font-bold text-navy dark:text-white">{suspendedAgencies}</p></div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <button onClick={() => setActiveTab("agencies")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "agencies" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-50"}`}>
+            <button onClick={() => setActiveTab("agencies")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "agencies" ? "bg-brand text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}>
               Agencies
             </button>
-            <button onClick={() => setActiveTab("audit")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "audit" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-50"}`}>
+            <button onClick={() => setActiveTab("audit")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "audit" ? "bg-brand text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}>
               Audit Logs
             </button>
-            <button onClick={() => setActiveTab("plans")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "plans" ? "bg-brand text-white" : "text-slate-600 hover:bg-slate-50"}`}>
+            <button onClick={() => setActiveTab("plans")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === "plans" ? "bg-brand text-white" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"}`}>
               Plans
             </button>
           </div>
@@ -498,7 +498,7 @@ export default function AdminPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search agencies..."
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
               />
             </div>
           </div>
@@ -718,27 +718,27 @@ export default function AdminPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Agency Name *</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Agency Name *</label>
                     <input value={createForm.agencyName} onChange={(e) => setCreateForm((prev) => ({ ...prev, agencyName: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Owner Name *</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Owner Name *</label>
                     <input value={createForm.ownerName} onChange={(e) => setCreateForm((prev) => ({ ...prev, ownerName: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Owner Email *</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Owner Email *</label>
                     <input type="email" value={createForm.ownerEmail} onChange={(e) => setCreateForm((prev) => ({ ...prev, ownerEmail: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Owner Phone *</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Owner Phone *</label>
                     <input value={createForm.ownerPhone} onChange={(e) => setCreateForm((prev) => ({ ...prev, ownerPhone: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Temporary Password *</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Temporary Password *</label>
                     <input type="password" value={createForm.temporaryPassword} onChange={(e) => setCreateForm((prev) => ({ ...prev, temporaryPassword: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Plan</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Plan</label>
                     <select value={createForm.plan} onChange={(e) => setCreateForm((prev) => ({ ...prev, plan: e.target.value as PlanId }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
                       <option value="starter">Starter</option>
                       <option value="professional">Professional</option>
@@ -746,7 +746,7 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
                     <select value={createForm.status} onChange={(e) => setCreateForm((prev) => ({ ...prev, status: e.target.value as AgencyRow["status"] }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
                       <option value="trial">Trial</option>
                       <option value="active">Active</option>
@@ -754,11 +754,11 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Currency</label>
                     <input value={createForm.currency} onChange={(e) => setCreateForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Language</label>
                     <select value={createForm.language} onChange={(e) => setCreateForm((prev) => ({ ...prev, language: e.target.value as "en" | "ar" }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
                       <option value="en">English</option>
                       <option value="ar">Arabic</option>
@@ -805,19 +805,19 @@ export default function AdminPage() {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Agency Name</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Agency Name</label>
                     <input value={agencyForm.name} onChange={(e) => setAgencyForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
                     <input value={agencyForm.email} onChange={(e) => setAgencyForm((prev) => ({ ...prev, email: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
                     <input value={agencyForm.phone} onChange={(e) => setAgencyForm((prev) => ({ ...prev, phone: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
                     <select value={agencyForm.status} onChange={(e) => setAgencyForm((prev) => ({ ...prev, status: e.target.value as AgencyRow["status"] }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
                       <option value="active">Active</option>
                       <option value="trial">Trial</option>
@@ -887,7 +887,7 @@ export default function AdminPage() {
                   Type DELETE to confirm this permanent deletion.
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Confirmation</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Confirmation</label>
                   <input
                     value={deleteConfirmation}
                     onChange={(e) => setDeleteConfirmation(e.target.value)}
@@ -910,23 +910,23 @@ export default function AdminPage() {
                 <h2 className="font-bold text-navy">Edit Plan</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Plan Name</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Plan Name</label>
                     <input value={planForm.name} onChange={(e) => setPlanForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Monthly Price</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Monthly Price</label>
                     <input type="number" min="0" value={planForm.monthlyPrice} onChange={(e) => setPlanForm((prev) => ({ ...prev, monthlyPrice: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">User Limit</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">User Limit</label>
                     <input type="number" min="0" placeholder="Blank for unlimited" value={planForm.userLimit} onChange={(e) => setPlanForm((prev) => ({ ...prev, userLimit: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Booking Limit</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Booking Limit</label>
                     <input type="number" min="0" placeholder="Blank for unlimited" value={planForm.bookingLimit} onChange={(e) => setPlanForm((prev) => ({ ...prev, bookingLimit: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Features</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Features</label>
                     <textarea rows={5} value={planForm.features} onChange={(e) => setPlanForm((prev) => ({ ...prev, features: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                     <p className="mt-1 text-xs text-slate-500">One feature per line.</p>
                   </div>

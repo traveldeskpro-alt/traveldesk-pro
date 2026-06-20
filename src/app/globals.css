@@ -151,3 +151,30 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
+
+/* Dark mode: native date/time picker icon invert */
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+/* Shared dark-mode form tokens used across pages */
+.dark-input {
+  @apply bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500;
+}
+.dark-label {
+  @apply text-slate-700 dark:text-slate-300;
+}
+.dark-sublabel {
+  @apply text-slate-600 dark:text-slate-400;
+}
+.dark-card {
+  @apply bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700;
+}
+.dark-modal {
+  @apply bg-white dark:bg-slate-900;
+}
+.dark-modal-header {
+  @apply bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800;
+}

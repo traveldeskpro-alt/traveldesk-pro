@@ -9,6 +9,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Combobox } from '@/components/ui/Combobox';
+import { DatePicker } from '@/components/ui/DatePicker';
 import {
   Search, Filter, Plus, Plane, FileText, Hotel, Users, X,
   Save, Calendar, CheckCircle, Edit2, UserCheck, Shield, MoreHorizontal,
@@ -40,26 +41,26 @@ const typeLabels: Record<string, string> = {
 };
 
 const typeColors: Record<string, string> = {
-  air_ticket: 'bg-blue-50 text-blue-700 border-blue-200',
-  visa: 'bg-orange-50 text-orange-700 border-orange-200',
-  hotel: 'bg-slate-100 text-slate-700 border-slate-200',
-  group_tour: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  insurance: 'bg-purple-50 text-purple-700 border-purple-200',
-  other_service: 'bg-pink-50 text-pink-700 border-pink-200',
+  air_ticket: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20',
+  visa: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-500/20',
+  hotel: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600',
+  group_tour: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+  insurance: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20',
+  other_service: 'bg-pink-50 dark:bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-200 dark:border-pink-500/20',
 };
 
 const statusColors: Record<string, string> = {
-  paid: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  pending: 'bg-amber-100 text-amber-700 border-amber-200',
-  refund: 'bg-purple-100 text-purple-700 border-purple-200',
+  paid: 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+  pending: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
+  refund: 'bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20',
 };
 
 const processColors: Record<string, string> = {
-  issued: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  approved: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  processing: 'bg-blue-100 text-blue-700 border-blue-200',
-  rejected: 'bg-red-100 text-red-700 border-red-200',
-  pending: 'bg-slate-100 text-slate-700 border-slate-200',
+  issued: 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+  approved: 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+  processing: 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20',
+  rejected: 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20',
+  pending: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600',
 };
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -174,9 +175,9 @@ const EMPTY_FORM: BookingForm = {
 // ─── label helpers ────────────────────────────────────────────────────────────
 
 const inputCls =
-  'w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
-const labelCls = 'block text-sm font-medium text-slate-700 mb-1';
-const subLabelCls = 'block text-xs font-medium text-slate-600 mb-1';
+  'w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand';
+const labelCls = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1';
+const subLabelCls = 'block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1';
 
 // ─── component ───────────────────────────────────────────────────────────────
 
@@ -369,8 +370,8 @@ export default function BookingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">Bookings</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage all transactions</p>
+          <h1 className="text-2xl font-bold text-[#0F172A] dark:text-white">Bookings</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage all transactions</p>
         </div>
         {can('create') && (
           <div className="flex items-center gap-2">
@@ -397,17 +398,17 @@ export default function BookingsPage() {
             <Plane className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-[#0F172A]">{bookings.length}</p>
-            <p className="text-xs text-slate-500">Total Bookings</p>
+            <p className="text-2xl font-bold text-[#0F172A] dark:text-white">{bookings.length}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Total Bookings</p>
           </div>
         </Card>
         <Card className="p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <CheckCircle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-[#0F172A]">{formatCurrency(totalRevenue, 'OMR')}</p>
-            <p className="text-xs text-slate-500">Revenue</p>
+            <p className="text-2xl font-bold text-[#0F172A] dark:text-white">{formatCurrency(totalRevenue, 'OMR')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Revenue</p>
           </div>
         </Card>
         <Card className="p-4 flex items-center gap-4">
@@ -415,17 +416,17 @@ export default function BookingsPage() {
             <FileText className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-[#0F172A]">{formatCurrency(totalProfit, 'OMR')}</p>
-            <p className="text-xs text-slate-500">Net Profit</p>
+            <p className="text-2xl font-bold text-[#0F172A] dark:text-white">{formatCurrency(totalProfit, 'OMR')}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Net Profit</p>
           </div>
         </Card>
         <Card className="p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
             <Calendar className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-[#0F172A]">{pendingCount}</p>
-            <p className="text-xs text-slate-500">Pending Payments</p>
+            <p className="text-2xl font-bold text-[#0F172A] dark:text-white">{pendingCount}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Pending Payments</p>
           </div>
         </Card>
       </div>
@@ -439,7 +440,7 @@ export default function BookingsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search bookings..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/50"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-[#0F172A] dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/50"
           />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -450,7 +451,7 @@ export default function BookingsPage() {
               className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                 filter === f
                   ? 'bg-brand text-white shadow-md'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
               {f === 'all' ? 'All' : typeLabels[f]}
@@ -462,11 +463,11 @@ export default function BookingsPage() {
       {/* Empty State */}
       {bookings.length === 0 && (
         <div className="text-center py-16">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
-            <Plane className="w-8 h-8 text-slate-400" />
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center mx-auto mb-4">
+            <Plane className="w-8 h-8 text-slate-400 dark:text-slate-500" />
           </div>
-          <h3 className="text-lg font-semibold text-[#0F172A]">No bookings yet</h3>
-          <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+          <h3 className="text-lg font-semibold text-[#0F172A] dark:text-white">No bookings yet</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
             Create your first booking to start tracking transactions.
           </p>
           {can('create') && (
@@ -486,22 +487,22 @@ export default function BookingsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase">ID</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase">Customer</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase">Type</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase">Details</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase">Amount</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase">Payment</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase">Status</th>
-                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase">Date</th>
-                  <th className="text-right px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase"></th>
+                <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase">ID</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase">Customer</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase">Type</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase">Details</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase">Amount</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase">Payment</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase">Status</th>
+                  <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase">Date</th>
+                  <th className="text-right px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {filtered.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-5 py-4 font-mono text-xs font-semibold text-slate-700">
+                  <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="px-5 py-4 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
                       {b.id.slice(0, 8)}
                     </td>
                     <td className="px-5 py-4">
@@ -509,7 +510,7 @@ export default function BookingsPage() {
                         <div className="w-7 h-7 rounded-full bg-brand/10 flex items-center justify-center text-brand text-xs font-bold">
                           {b.customer_name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
                         </div>
-                        <span className="font-medium text-[#0F172A] text-sm">{b.customer_name}</span>
+                        <span className="font-medium text-[#0F172A] dark:text-white text-sm">{b.customer_name}</span>
                       </div>
                     </td>
                     <td className="px-5 py-4">
@@ -518,14 +519,14 @@ export default function BookingsPage() {
                         {typeLabels[b.type] ?? b.type}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-slate-500 text-xs max-w-[160px] truncate">
+                    <td className="px-5 py-4 text-slate-500 dark:text-slate-400 text-xs max-w-[160px] truncate">
                       {getBookingDetails(b)}
                     </td>
                     <td className="px-5 py-4">
-                      <p className="font-semibold text-[#0F172A] text-sm">
+                      <p className="font-semibold text-[#0F172A] dark:text-white text-sm">
                         {formatCurrency(b.sale_price, b.currency)}
                       </p>
-                      <p className="text-xs text-slate-400">Cost: {formatCurrency(b.cost_price, b.currency)}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500">Cost: {formatCurrency(b.cost_price, b.currency)}</p>
                     </td>
                     <td className="px-5 py-4">
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border ${statusColors[b.payment_status]}`}>
@@ -537,13 +538,13 @@ export default function BookingsPage() {
                         {b.process_status}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-xs text-slate-500">
+                    <td className="px-5 py-4 text-xs text-slate-500 dark:text-slate-400">
                       <div>{formatDate(b.created_at)}</div>
                       {b.created_by_name && (
-                        <div className="text-slate-400 mt-0.5">By: {b.created_by_name}</div>
+                        <div className="text-slate-400 dark:text-slate-500 mt-0.5">By: {b.created_by_name}</div>
                       )}
                       {b.issued_by_name && (
-                        <div className="text-slate-400 mt-0.5">Issued: {b.issued_by_name}</div>
+                        <div className="text-slate-400 dark:text-slate-500 mt-0.5">Issued: {b.issued_by_name}</div>
                       )}
                     </td>
                     <td className="px-5 py-4 text-right">
@@ -551,7 +552,7 @@ export default function BookingsPage() {
                         {can('edit') && (
                           <button
                             onClick={() => openEdit(b)}
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-brand transition-colors"
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-brand transition-colors"
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -560,7 +561,7 @@ export default function BookingsPage() {
                         {can('delete') && (
                           <button
                             onClick={() => handleDelete(b.id)}
-                            className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
                             title="Delete"
                           >
                             <X className="w-4 h-4" />
@@ -591,17 +592,17 @@ export default function BookingsPage() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowModal(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+          <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
             {/* Modal header */}
-            <div className="sticky top-0 bg-white z-10 pb-4 border-b border-slate-100 flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-[#0F172A]">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 z-10 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-[#0F172A] dark:text-white">
                 {editing ? 'Edit Booking' : 'New Booking'}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-slate-500" />
+                <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               </button>
             </div>
 
@@ -610,7 +611,7 @@ export default function BookingsPage() {
               <div>
                 <label className={labelCls}>Customer *</label>
                 {customers.length === 0 ? (
-                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-800">
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-sm text-amber-800 dark:text-amber-400">
                     <Users className="w-4 h-4 shrink-0" />
                     No customers found.{' '}
                     <Link
@@ -669,20 +670,20 @@ export default function BookingsPage() {
 
               {/* ── Flight Ticket Fields ─────────────────────────────────── */}
               {isFlightForm && (
-                <div className="border border-blue-100 rounded-xl p-4 bg-blue-50/20 space-y-3">
+                <div className="border border-blue-100 dark:border-blue-500/20 rounded-xl p-4 bg-blue-50/20 dark:bg-blue-500/5 space-y-3">
                   {/* Header + Trip Type toggle */}
                   <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <h3 className="text-xs font-semibold text-blue-700 uppercase tracking-wide flex items-center gap-2">
+                    <h3 className="text-xs font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide flex items-center gap-2">
                       <Plane className="w-3.5 h-3.5" /> Flight Details
                     </h3>
-                    <div className="flex items-center rounded-lg border border-blue-200 overflow-hidden text-xs font-medium">
+                    <div className="flex items-center rounded-lg border border-blue-200 dark:border-blue-500/30 overflow-hidden text-xs font-medium">
                       <button
                         type="button"
                         onClick={() => sf({ trip_type: 'one_way', return_date: '' })}
                         className={`px-3 py-1.5 transition-colors ${
                           form.trip_type === 'one_way'
                             ? 'bg-blue-600 text-white'
-                            : 'bg-white text-blue-600 hover:bg-blue-50'
+                            : 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10'
                         }`}
                       >
                         One Way
@@ -690,10 +691,10 @@ export default function BookingsPage() {
                       <button
                         type="button"
                         onClick={() => sf({ trip_type: 'return' })}
-                        className={`px-3 py-1.5 transition-colors border-l border-blue-200 ${
+                        className={`px-3 py-1.5 transition-colors border-l border-blue-200 dark:border-blue-500/30 ${
                           form.trip_type === 'return'
                             ? 'bg-blue-600 text-white'
-                            : 'bg-white text-blue-600 hover:bg-blue-50'
+                            : 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10'
                         }`}
                       >
                         Return
@@ -775,21 +776,19 @@ export default function BookingsPage() {
                   <div className={`grid gap-3 ${form.trip_type === 'return' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2'}`}>
                     <div>
                       <label className={subLabelCls}>Departure Date</label>
-                      <input
-                        type="date"
+                      <DatePicker
                         value={form.departure_date}
-                        onChange={(e) => sf({ departure_date: e.target.value })}
-                        className={inputCls}
+                        onChange={(v) => sf({ departure_date: v })}
+                        placeholder="Select date"
                       />
                     </div>
                     {form.trip_type === 'return' && (
                       <div>
                         <label className={subLabelCls}>Return Date</label>
-                        <input
-                          type="date"
+                        <DatePicker
                           value={form.return_date}
-                          onChange={(e) => sf({ return_date: e.target.value })}
-                          className={inputCls}
+                          onChange={(v) => sf({ return_date: v })}
+                          placeholder="Select date"
                         />
                       </div>
                     )}
@@ -810,8 +809,8 @@ export default function BookingsPage() {
 
               {/* ── Visa Fields ──────────────────────────────────────────── */}
               {isVisaForm && (
-                <div className="border border-orange-100 rounded-xl p-4 bg-orange-50/20 space-y-3">
-                  <h3 className="text-xs font-semibold text-orange-700 uppercase tracking-wide flex items-center gap-2">
+                <div className="border border-orange-100 dark:border-orange-500/20 rounded-xl p-4 bg-orange-50/20 dark:bg-orange-500/5 space-y-3">
+                  <h3 className="text-xs font-semibold text-orange-700 dark:text-orange-400 uppercase tracking-wide flex items-center gap-2">
                     <FileText className="w-3.5 h-3.5" /> Visa Details
                   </h3>
 
@@ -845,20 +844,18 @@ export default function BookingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className={subLabelCls}>Application Date</label>
-                      <input
-                        type="date"
+                      <DatePicker
                         value={form.application_date}
-                        onChange={(e) => sf({ application_date: e.target.value })}
-                        className={inputCls}
+                        onChange={(v) => sf({ application_date: v })}
+                        placeholder="Select date"
                       />
                     </div>
                     <div>
                       <label className={subLabelCls}>Expected Approval Date</label>
-                      <input
-                        type="date"
+                      <DatePicker
                         value={form.expected_approval_date}
-                        onChange={(e) => sf({ expected_approval_date: e.target.value })}
-                        className={inputCls}
+                        onChange={(v) => sf({ expected_approval_date: v })}
+                        placeholder="Select date"
                       />
                     </div>
                   </div>
@@ -934,8 +931,8 @@ export default function BookingsPage() {
               </div>
 
               {/* Ownership */}
-              <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/30 space-y-3">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-2">
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50/30 dark:bg-slate-800/30 space-y-3">
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-2">
                   <UserCheck className="w-3.5 h-3.5" /> Ownership
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -983,7 +980,7 @@ export default function BookingsPage() {
                     Number(form.cost_price) || 0,
                   );
                   return (
-                    <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-lg px-3 py-2">
                       Commission: <strong>{commission.toFixed(3)} OMR</strong> (
                       {a.commission_type === 'fixed'
                         ? 'fixed'
@@ -1022,23 +1019,22 @@ export default function BookingsPage() {
                 </div>
                 <div>
                   <label className={labelCls}>Date</label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={form.date}
-                    onChange={(e) => sf({ date: e.target.value })}
-                    className={inputCls}
+                    onChange={(v) => sf({ date: v })}
+                    placeholder="Select date"
                   />
                 </div>
               </div>
             </div>
 
             {saveError && (
-              <div className="mt-4 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              <div className="mt-4 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
                 {saveError}
               </div>
             )}
 
-            <div className="sticky bottom-0 bg-white pt-4 mt-4 border-t border-slate-100 flex justify-end gap-2">
+            <div className="sticky bottom-0 bg-white dark:bg-slate-900 pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
               <Button variant="primary" onClick={handleSave} className="gap-2">
                 <Save className="w-4 h-4" /> Save Booking

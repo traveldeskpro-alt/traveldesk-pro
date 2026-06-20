@@ -493,8 +493,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy">{t("settings")}</h1>
-        <p className="text-slate-500 text-sm mt-1">Manage your agency preferences</p>
+        <h1 className="text-2xl font-bold text-navy dark:text-white">{t("settings")}</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage your agency preferences</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -507,7 +507,7 @@ export default function SettingsPage() {
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? "bg-brand text-white shadow-sm"
-                  : "text-slate-600 hover:bg-white hover:shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm"
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -520,13 +520,13 @@ export default function SettingsPage() {
         <div className="flex-1">
           {/* General */}
           {activeTab === "general" && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-6">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center relative overflow-hidden">
                   {profileForm.logoUrl ? (
                     <img src={profileForm.logoUrl} alt="Agency logo" className="h-full w-full object-contain p-1" />
                   ) : (
-                    <Briefcase className="w-8 h-8 text-slate-400" />
+                    <Briefcase className="w-8 h-8 text-slate-400 dark:text-slate-500" />
                   )}
                   <input
                     ref={logoInputRef}
@@ -546,60 +546,60 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 <div>
-                  <h3 className="font-bold text-navy">{t("agencyProfile")}</h3>
-                  <p className="text-sm text-slate-500">Update your agency details</p>
-                  <p className="mt-1 text-xs text-slate-400">Logo appears on invoice previews and PDFs.</p>
+                  <h3 className="font-bold text-navy dark:text-white">{t("agencyProfile")}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Update your agency details</p>
+                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Logo appears on invoice previews and PDFs.</p>
                 </div>
               </div>
               {logoError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400">
                   {logoError}
                 </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t("agencyName")}</label>
-                  <input value={profileForm.name} onChange={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("agencyName")}</label>
+                  <input value={profileForm.name} onChange={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t("email")}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("email")}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input value={profileForm.email} onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                    <input value={profileForm.email} onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t("phone")}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("phone")}</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input value={profileForm.phone} onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                    <input value={profileForm.phone} onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t("address")}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("address")}</label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input value={profileForm.address} onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                    <input value={profileForm.address} onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t("crNumber")}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("crNumber")}</label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input value={profileForm.crNumber} onChange={(e) => setProfileForm((prev) => ({ ...prev, crNumber: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                    <input value={profileForm.crNumber} onChange={(e) => setProfileForm((prev) => ({ ...prev, crNumber: e.target.value }))} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t("currency")}</label>
-                  <select value={profileForm.currency} onChange={(e) => setProfileForm((prev) => ({ ...prev, currency: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("currency")}</label>
+                  <select value={profileForm.currency} onChange={(e) => setProfileForm((prev) => ({ ...prev, currency: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
                     {CURRENCIES.map((c) => (
                       <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t("language")}</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("language")}</label>
                   <select
                     value={profileForm.language}
                     onChange={(e) => {
@@ -607,7 +607,7 @@ export default function SettingsPage() {
                       setProfileForm((prev) => ({ ...prev, language: nextLanguage }));
                       setLanguage(nextLanguage);
                     }}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   >
                     <option value="en">English</option>
                     <option value="ar">العربية</option>
@@ -615,8 +615,8 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                   <MessageCircle className="w-4 h-4" />
                   <button onClick={() => setActiveTab("whatsapp")} className="font-medium text-brand hover:underline">
                     WhatsApp Business Settings
@@ -637,22 +637,22 @@ export default function SettingsPage() {
 
           {/* Users */}
           {activeTab === "users" && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-bold text-navy">{t("usersRoles")}</h3>
-                  <p className="text-xs text-slate-500 mt-1">Manage agency team profiles, roles, and access status.</p>
+                  <h3 className="font-bold text-navy dark:text-white">{t("usersRoles")}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage agency team profiles, roles, and access status.</p>
                 </div>
                 <button onClick={openAddUser} className="inline-flex items-center gap-2 px-3 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg">
                   <UserPlus className="w-4 h-4" /> Add User
                 </button>
               </div>
-              {userMessage && <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{userMessage}</div>}
-              {userError && !userModalOpen && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{userError}</div>}
+              {userMessage && <div className="mb-4 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-3 text-sm text-emerald-700 dark:text-emerald-400">{userMessage}</div>}
+              {userError && !userModalOpen && <div className="mb-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400">{userError}</div>}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-100 text-slate-500 text-xs uppercase tracking-wider">
+                    <tr className="border-b border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
                       <th className="px-3 py-3 text-left font-medium">Name</th>
                       <th className="px-3 py-3 text-left font-medium">Email</th>
                       <th className="px-3 py-3 text-left font-medium">Role</th>
@@ -662,14 +662,14 @@ export default function SettingsPage() {
                   </thead>
                   <tbody>
                     {users.map((u) => (
-                      <tr key={u.id} className="border-b border-slate-50 hover:bg-slate-50">
-                        <td className="px-3 py-3 font-medium text-slate-900">{u.name}</td>
-                        <td className="px-3 py-3 text-slate-600">{u.email}</td>
+                      <tr key={u.id} className="border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                        <td className="px-3 py-3 font-medium text-slate-900 dark:text-white">{u.name}</td>
+                        <td className="px-3 py-3 text-slate-600 dark:text-slate-300">{u.email}</td>
                         <td className="px-3 py-3">
-                          <span className="capitalize text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">{u.role}</span>
+                          <span className="capitalize text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">{u.role}</span>
                         </td>
                         <td className="px-3 py-3">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${u.active ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${u.active ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"}`}>
                             {u.active ? "Active" : "Inactive"}
                           </span>
                         </td>
@@ -696,11 +696,11 @@ export default function SettingsPage() {
               {userModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setUserModalOpen(false)} />
-                  <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                  <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-2xl">
                     <div className="mb-5 flex items-center justify-between">
                       <div>
-                        <h2 className="text-lg font-bold text-navy">{editingUser ? "Edit User" : "Add User"}</h2>
-                        <p className="text-xs text-slate-500">Changes are saved to the agency users table.</p>
+                        <h2 className="text-lg font-bold text-navy dark:text-white">{editingUser ? "Edit User" : "Add User"}</h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Changes are saved to the agency users table.</p>
                       </div>
                       <button onClick={() => setUserModalOpen(false)} className="rounded-lg p-2 hover:bg-slate-100">
                         <X className="h-5 w-5 text-slate-400" />
@@ -708,16 +708,16 @@ export default function SettingsPage() {
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
-                        <input value={userForm.name} onChange={(e) => setUserForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name *</label>
+                        <input value={userForm.name} onChange={(e) => setUserForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
-                        <input type="email" value={userForm.email} onChange={(e) => setUserForm((prev) => ({ ...prev, email: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email *</label>
+                        <input type="email" value={userForm.email} onChange={(e) => setUserForm((prev) => ({ ...prev, email: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-                        <select value={userForm.role} onChange={(e) => setUserForm((prev) => ({ ...prev, role: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" disabled={editingUser?.id === user?.id}>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Role</label>
+                        <select value={userForm.role} onChange={(e) => setUserForm((prev) => ({ ...prev, role: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" disabled={editingUser?.id === user?.id}>
                           {editableRoles.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}
                         </select>
                       </div>
@@ -726,13 +726,13 @@ export default function SettingsPage() {
                         Active user
                       </label>
                       {userError && (
-                        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        <div className="flex items-start gap-2 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400">
                           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {userError}
                         </div>
                       )}
                     </div>
                     <div className="mt-6 flex justify-end gap-2">
-                      <button onClick={() => setUserModalOpen(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                      <button onClick={() => setUserModalOpen(false)} className="rounded-lg border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
                       <button onClick={saveUser} disabled={userSaving} className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-deep-blue disabled:opacity-50">
                         <Save className="h-4 w-4" /> {userSaving ? "Saving..." : "Save User"}
                       </button>
@@ -746,26 +746,26 @@ export default function SettingsPage() {
           {/* Subscription */}
           {activeTab === "subscription" && (
             <div className="space-y-4">
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-bold text-navy">{t("currentPlan")}</h3>
-                    <p className="text-sm text-slate-500">You are currently on the {currentPlan.name} plan</p>
-                    <p className="text-xs text-slate-400 mt-1">Plan data loads from Supabase; saving updates this agency profile.</p>
+                    <h3 className="font-bold text-navy dark:text-white">{t("currentPlan")}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">You are currently on the {currentPlan.name} plan</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Plan data loads from Supabase; saving updates this agency profile.</p>
                   </div>
                   <span className="px-3 py-1 bg-brand text-white text-xs font-bold rounded-full">{currentPlan.name}</span>
                 </div>
-                {plansLoading && <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">Loading subscription plans...</div>}
-                {subscriptionMessage && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{subscriptionMessage}</div>}
-                {subscriptionError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{subscriptionError}</div>}
+                {plansLoading && <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3 text-sm text-slate-500 dark:text-slate-400">Loading subscription plans...</div>}
+                {subscriptionMessage && <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-3 text-sm text-emerald-700 dark:text-emerald-400">{subscriptionMessage}</div>}
+                {subscriptionError && <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400">{subscriptionError}</div>}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   {plans.map((plan) => (
-                    <div key={plan.id} className={`border rounded-xl p-4 transition-all ${plan.id === currentPlanId ? "border-brand bg-brand/5 ring-1 ring-brand" : "border-slate-200"}`}>
-                      <h4 className="font-bold text-navy">{plan.name}</h4>
+                    <div key={plan.id} className={`border rounded-xl p-4 transition-all ${plan.id === currentPlanId ? "border-brand bg-brand/5 dark:bg-brand/10 ring-1 ring-brand" : "border-slate-200 dark:border-slate-700"}`}>
+                      <h4 className="font-bold text-navy dark:text-white">{plan.name}</h4>
                       <p className="text-2xl font-bold text-brand mt-2">{plan.priceOmr} <span className="text-sm font-normal text-slate-500">OMR/mo</span></p>
                       <ul className="mt-3 space-y-1">
                         {plan.features.map((f, i) => (
-                          <li key={i} className="text-xs text-slate-600 flex items-start gap-1.5"><CheckCircle className="w-3 h-3 text-brand mt-0.5" />{f}</li>
+                          <li key={i} className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5"><CheckCircle className="w-3 h-3 text-brand mt-0.5" />{f}</li>
                         ))}
                       </ul>
                       <button
@@ -787,14 +787,14 @@ export default function SettingsPage() {
           {activeTab === "notifications" && (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-navy mb-2">Notification Preferences</h3>
+                <h3 className="font-bold text-navy dark:text-white mb-2">Notification Preferences</h3>
                 {notificationsSaved && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
               </div>
               {notificationLabels.map((label) => (
                 <div key={label} className="flex items-center justify-between gap-4 py-3 border-b border-slate-50 last:border-0">
                   <div className="flex items-center gap-3">
-                    <Bell className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm text-slate-700">{label}</span>
+                    <Bell className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -812,30 +812,30 @@ export default function SettingsPage() {
 
           {/* Security */}
           {activeTab === "security" && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
-              <h3 className="font-bold text-navy mb-2">Security Settings</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-6">
+              <h3 className="font-bold text-navy dark:text-white mb-2">Security Settings</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">New Password</label>
                   <input
                     type="password"
                     value={securityForm.newPassword}
                     onChange={(e) => setSecurityForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Confirm New Password</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Confirm New Password</label>
                   <input
                     type="password"
                     value={securityForm.confirmPassword}
                     onChange={(e) => setSecurityForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                   />
                 </div>
               </div>
-              {securityError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{securityError}</div>}
-              {securityMessage && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{securityMessage}</div>}
+              {securityError && <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400">{securityError}</div>}
+              {securityMessage && <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-3 text-sm text-emerald-700 dark:text-emerald-400">{securityMessage}</div>}
               <button
                 onClick={handlePasswordSave}
                 disabled={securitySaving}
@@ -843,21 +843,21 @@ export default function SettingsPage() {
               >
                 {securitySaving ? "Saving..." : "Update Password"}
               </button>
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <div className="text-sm text-slate-500 flex items-center gap-2">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
                   <Shield className="w-4 h-4" /> Two-factor authentication
                 </div>
-                <button disabled title="Two-factor authentication is coming soon" className="px-4 py-2 bg-slate-200 text-slate-500 text-sm font-medium rounded-lg cursor-not-allowed">Enable 2FA</button>
+                <button disabled title="Two-factor authentication is coming soon" className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-sm font-medium rounded-lg cursor-not-allowed">Enable 2FA</button>
               </div>
             </div>
           )}
 
           {/* Appearance */}
           {activeTab === "appearance" && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
-              <h3 className="font-bold text-navy mb-2">Appearance</h3>
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-6">
+              <h3 className="font-bold text-navy dark:text-white mb-2">Appearance</h3>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Language</label>
                 <select
                   value={profileForm.language}
                   onChange={(e) => {
@@ -865,12 +865,12 @@ export default function SettingsPage() {
                     setProfileForm((prev) => ({ ...prev, language: nextLanguage }));
                     setLanguage(nextLanguage);
                   }}
-                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
                 >
                   <option value="en">English</option>
                   <option value="ar">العربية (RTL)</option>
                 </select>
-                <p className="text-xs text-slate-500 mt-1">Switching to Arabic will enable RTL layout</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Switching to Arabic will enable RTL layout</p>
               </div>
               <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-brand hover:bg-deep-blue text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
@@ -881,13 +881,13 @@ export default function SettingsPage() {
                   {saveError}
                 </div>
               )}
-              <div className="pt-4 border-t border-slate-100">
-                <button disabled title="Data export is coming soon" className="flex items-center gap-2 text-sm text-slate-400 px-3 py-2 rounded-lg cursor-not-allowed">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+                <button disabled title="Data export is coming soon" className="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500 px-3 py-2 rounded-lg cursor-not-allowed">
                   <Database className="w-4 h-4" /> Export all data
                 </button>
               </div>
               <div className="pt-2">
-                <button disabled title="Account deletion is coming soon" className="flex items-center gap-2 text-sm text-slate-400 px-3 py-2 rounded-lg cursor-not-allowed">
+                <button disabled title="Account deletion is coming soon" className="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500 px-3 py-2 rounded-lg cursor-not-allowed">
                   <Trash2 className="w-4 h-4" /> Delete account
                 </button>
               </div>
@@ -896,24 +896,24 @@ export default function SettingsPage() {
 
           {/* WhatsApp */}
           {activeTab === "whatsapp" && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-6">
               <div>
-                <h3 className="font-bold text-navy">WhatsApp Business Settings</h3>
-                <p className="text-sm text-slate-500 mt-1">Invoice sharing uses WhatsApp Web via wa.me with a pre-filled invoice summary.</p>
+                <h3 className="font-bold text-navy dark:text-white">WhatsApp Business Settings</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Invoice sharing uses WhatsApp Web via wa.me with a pre-filled invoice summary.</p>
               </div>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-400">
                 WhatsApp Business API delivery is Coming Soon. Production actions only open WhatsApp Web; no API send is attempted.
               </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Sharing method</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sharing method</label>
                   <input
                     readOnly
                     value="WhatsApp Web (wa.me)"
-                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700"
+                    className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-300"
                   />
                 </div>
-                <label className="flex items-center gap-3 text-sm text-slate-700">
+                <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
                   <input
                     type="checkbox"
                     checked={whatsappSettings.enabled}
@@ -922,7 +922,7 @@ export default function SettingsPage() {
                   />
                   Remember wa.me as this agency&apos;s WhatsApp sharing preference
                 </label>
-                <p className="text-xs text-slate-500">API providers are not connected in this app, so invoice sharing does not claim WhatsApp Business API delivery.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">API providers are not connected in this app, so invoice sharing does not claim WhatsApp Business API delivery.</p>
               </div>
               <button
                 onClick={saveWhatsAppSettings}
