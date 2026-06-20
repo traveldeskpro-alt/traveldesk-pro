@@ -24,10 +24,12 @@
     "tailwind-merge": "^2.3.0"
   },
   "devDependencies": {
+    "@nwpr/airport-codes": "^3.0.3",
     "@types/node": "^20.12.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/uuid": "^10.0.0",
+    "airline-codes": "^1.1.5",
     "autoprefixer": "^10.4.19",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.0",

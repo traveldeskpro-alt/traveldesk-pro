@@ -121,6 +121,7 @@ interface BookingForm {
   date: string;
   issued_by_name: string;
   // Flight Ticket fields
+  trip_type: 'one_way' | 'return';
   airline_code: string;
   airline: string;
   pnr: string;
@@ -153,6 +154,7 @@ const EMPTY_FORM: BookingForm = {
   agent_name: '',
   date: new Date().toISOString().split('T')[0],
   issued_by_name: '',
+  trip_type: 'one_way',
   airline_code: '',
   airline: '',
   pnr: '',
@@ -229,6 +231,8 @@ export default function BookingsPage() {
       agent_name: b.agent_name || '',
       date: b.created_at.split('T')[0],
       issued_by_name: b.issued_by_name || '',
+      // Detect return trip from saved return_date
+      trip_type: b.return_date ? 'return' : 'one_way',
       // Flight fields
       airline_code: b.airline_code || '',
       airline: b.airline || '',
@@ -296,7 +300,7 @@ export default function BookingsPage() {
       route_from: isFlightTicket ? (form.route_from || null) : null,
       route_to: isFlightTicket ? (form.route_to || null) : null,
       departure_date: isFlightTicket ? (form.departure_date || null) : null,
-      return_date: isFlightTicket ? (form.return_date || null) : null,
+      return_date: (isFlightTicket && form.trip_type === 'return') ? (form.return_date || null) : null,
       passenger_name: (isFlightTicket || isVisa) ? (form.passenger_name || null) : null,
       // Visa specific
       visa_country: isVisa ? (form.visa_country || null) : null,
@@ -666,9 +670,36 @@ export default function BookingsPage() {
               {/* ── Flight Ticket Fields ─────────────────────────────────── */}
               {isFlightForm && (
                 <div className="border border-blue-100 rounded-xl p-4 bg-blue-50/20 space-y-3">
-                  <h3 className="text-xs font-semibold text-blue-700 uppercase tracking-wide flex items-center gap-2">
-                    <Plane className="w-3.5 h-3.5" /> Flight Details
-                  </h3>
+                  {/* Header + Trip Type toggle */}
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <h3 className="text-xs font-semibold text-blue-700 uppercase tracking-wide flex items-center gap-2">
+                      <Plane className="w-3.5 h-3.5" /> Flight Details
+                    </h3>
+                    <div className="flex items-center rounded-lg border border-blue-200 overflow-hidden text-xs font-medium">
+                      <button
+                        type="button"
+                        onClick={() => sf({ trip_type: 'one_way', return_date: '' })}
+                        className={`px-3 py-1.5 transition-colors ${
+                          form.trip_type === 'one_way'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-blue-600 hover:bg-blue-50'
+                        }`}
+                      >
+                        One Way
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => sf({ trip_type: 'return' })}
+                        className={`px-3 py-1.5 transition-colors border-l border-blue-200 ${
+                          form.trip_type === 'return'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-blue-600 hover:bg-blue-50'
+                        }`}
+                      >
+                        Return
+                      </button>
+                    </div>
+                  </div>
 
                   {/* Airline + Airline Code */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -740,8 +771,8 @@ export default function BookingsPage() {
                     </div>
                   </div>
 
-                  {/* Departure + Return Date */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Departure Date — always shown. Return Date — only when Return selected */}
+                  <div className={`grid gap-3 ${form.trip_type === 'return' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2'}`}>
                     <div>
                       <label className={subLabelCls}>Departure Date</label>
                       <input
@@ -751,15 +782,17 @@ export default function BookingsPage() {
                         className={inputCls}
                       />
                     </div>
-                    <div>
-                      <label className={subLabelCls}>Return Date</label>
-                      <input
-                        type="date"
-                        value={form.return_date}
-                        onChange={(e) => sf({ return_date: e.target.value })}
-                        className={inputCls}
-                      />
-                    </div>
+                    {form.trip_type === 'return' && (
+                      <div>
+                        <label className={subLabelCls}>Return Date</label>
+                        <input
+                          type="date"
+                          value={form.return_date}
+                          onChange={(e) => sf({ return_date: e.target.value })}
+                          className={inputCls}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Passenger Name */}

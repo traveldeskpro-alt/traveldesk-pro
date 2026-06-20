@@ -1,5 +1,9 @@
+// ISO 3166-1 country list — approximately 249 sovereign states and territories.
+// Ordered: Gulf + Middle East + South Asia first (most common for visa bookings),
+// then remaining countries alphabetically.
+
 export const COUNTRIES: string[] = [
-  // Gulf & Middle East
+  // Gulf & Middle East (priority)
   'Oman',
   'UAE',
   'Saudi Arabia',
@@ -14,16 +18,18 @@ export const COUNTRIES: string[] = [
   'Yemen',
   'Palestine',
   'Israel',
-  'Turkey',
   'Egypt',
   'Libya',
   'Tunisia',
   'Algeria',
   'Morocco',
   'Sudan',
+  'South Sudan',
   'Somalia',
+  'Djibouti',
+  'Eritrea',
 
-  // South Asia
+  // South Asia (priority)
   'India',
   'Pakistan',
   'Bangladesh',
@@ -38,11 +44,13 @@ export const COUNTRIES: string[] = [
   'Indonesia',
   'Malaysia',
   'Thailand',
-  'Vietnam',
   'Singapore',
+  'Vietnam',
   'Myanmar',
   'Cambodia',
   'Laos',
+  'Brunei',
+  'Timor-Leste',
 
   // East Asia
   'China',
@@ -63,61 +71,173 @@ export const COUNTRIES: string[] = [
   'Armenia',
   'Georgia',
 
-  // East Africa
+  // Turkey
+  'Turkey',
+
+  // Africa — East
   'Ethiopia',
   'Kenya',
   'Tanzania',
   'Uganda',
   'Rwanda',
-  'Djibouti',
-  'Eritrea',
+  'Burundi',
+  'Comoros',
+  'Madagascar',
+  'Mauritius',
+  'Seychelles',
+  'Mozambique',
+  'Zimbabwe',
+  'Zambia',
+  'Malawi',
 
-  // West & Central Africa
+  // Africa — West & Central
   'Nigeria',
   'Ghana',
   'Senegal',
-  'Cameroon',
   'Ivory Coast',
-  'South Africa',
-  'Zimbabwe',
+  'Cameroon',
+  'Democratic Republic of Congo',
+  'Republic of Congo',
+  'Gabon',
+  'Equatorial Guinea',
+  'Central African Republic',
+  'Chad',
+  'Niger',
+  'Mali',
+  'Burkina Faso',
+  'Benin',
+  'Togo',
+  'Sierra Leone',
+  'Liberia',
+  'Guinea',
+  'Guinea-Bissau',
+  'Gambia',
+  'Cabo Verde',
+  'São Tomé and Príncipe',
 
-  // Europe
+  // Africa — Southern
+  'South Africa',
+  'Botswana',
+  'Namibia',
+  'Lesotho',
+  'Eswatini',
+  'Angola',
+
+  // Africa — North (remaining)
+  'Mauritania',
+  'Western Sahara',
+
+  // Europe — Western
   'United Kingdom',
-  'Germany',
+  'Ireland',
   'France',
-  'Italy',
-  'Spain',
-  'Portugal',
+  'Germany',
   'Netherlands',
   'Belgium',
+  'Luxembourg',
   'Switzerland',
   'Austria',
+  'Liechtenstein',
+  'Monaco',
+  'Andorra',
+
+  // Europe — Southern
+  'Spain',
+  'Portugal',
+  'Italy',
+  'San Marino',
+  'Vatican City',
+  'Malta',
+  'Greece',
+  'Cyprus',
+
+  // Europe — Northern
   'Sweden',
   'Norway',
   'Denmark',
   'Finland',
+  'Iceland',
+  'Estonia',
+  'Latvia',
+  'Lithuania',
+
+  // Europe — Central & Eastern
   'Poland',
   'Czech Republic',
+  'Slovakia',
   'Hungary',
   'Romania',
-  'Greece',
-  'Russia',
+  'Bulgaria',
+  'Slovenia',
+  'Croatia',
+  'Bosnia and Herzegovina',
+  'Serbia',
+  'Montenegro',
+  'North Macedonia',
+  'Albania',
+  'Kosovo',
+  'Moldova',
   'Ukraine',
+  'Belarus',
+  'Russia',
 
-  // Americas
+  // Americas — North
   'United States',
   'Canada',
   'Mexico',
-  'Brazil',
-  'Argentina',
+
+  // Americas — Caribbean
+  'Cuba',
+  'Jamaica',
+  'Haiti',
+  'Dominican Republic',
+  'Puerto Rico',
+  'Trinidad and Tobago',
+  'Barbados',
+  'Bahamas',
+  'Belize',
+  'Guatemala',
+  'Honduras',
+  'El Salvador',
+  'Nicaragua',
+  'Costa Rica',
+  'Panama',
+
+  // Americas — South
   'Colombia',
-  'Chile',
+  'Venezuela',
+  'Guyana',
+  'Suriname',
+  'Brazil',
+  'Ecuador',
   'Peru',
+  'Bolivia',
+  'Chile',
+  'Argentina',
+  'Uruguay',
+  'Paraguay',
 
   // Oceania
   'Australia',
   'New Zealand',
+  'Papua New Guinea',
   'Fiji',
+  'Solomon Islands',
+  'Vanuatu',
+  'Samoa',
+  'Tonga',
+  'Kiribati',
+  'Micronesia',
+  'Marshall Islands',
+  'Palau',
+  'Nauru',
+  'Tuvalu',
+
+  // Pacific territories (commonly used for visa purposes)
+  'Guam',
+  'American Samoa',
+  'New Caledonia',
+  'French Polynesia',
 ];
 
 export const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({
