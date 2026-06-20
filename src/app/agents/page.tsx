@@ -8,6 +8,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card } from '@/components/ui/Card';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ROLES, COMMISSION_TYPES, COMMISSION_BASES } from '@/lib/constants';
@@ -323,22 +324,22 @@ export default function AgentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">{t('agents')}</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage commission agents and agency staff</p>
+          <h1 className="text-2xl font-bold text-[#0F172A] dark:text-white">{t('agents')}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage commission agents and agency staff</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
         <button
           onClick={() => setTab('agents')}
-          className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${tab === 'agents' ? 'bg-white border border-b-white border-slate-200 text-brand -mb-px' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${tab === 'agents' ? 'bg-white dark:bg-slate-800 border border-b-white dark:border-b-slate-800 border-slate-200 dark:border-slate-700 text-brand -mb-px' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
         >
           <span className="flex items-center gap-2"><UserCheck className="w-4 h-4" /> Commission Agents</span>
         </button>
         <button
           onClick={() => setTab('staff')}
-          className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${tab === 'staff' ? 'bg-white border border-b-white border-slate-200 text-brand -mb-px' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${tab === 'staff' ? 'bg-white dark:bg-slate-800 border border-b-white dark:border-b-slate-800 border-slate-200 dark:border-slate-700 text-brand -mb-px' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
         >
           <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Staff Members</span>
         </button>
@@ -378,10 +379,10 @@ export default function AgentsPage() {
 
           {/* Empty state */}
           {agents.length === 0 && (
-            <div className="text-center py-16 border border-dashed border-slate-200 rounded-2xl bg-white">
-              <UserCheck className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-[#0F172A]">No agents yet</h3>
-              <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+            <div className="text-center py-16 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800/50">
+              <UserCheck className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-[#0F172A] dark:text-white">No agents yet</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
                 Add commission agents to track bookings, sales, and payouts.
               </p>
               {can('create') && (
@@ -398,18 +399,18 @@ export default function AgentsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-100">
-                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Agent</th>
-                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Commission</th>
-                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Bookings</th>
-                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Earned</th>
-                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Paid</th>
-                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Pending</th>
-                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Status</th>
-                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide"></th>
+                    <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
+                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Agent</th>
+                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Commission</th>
+                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Bookings</th>
+                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Earned</th>
+                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Paid</th>
+                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Pending</th>
+                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Status</th>
+                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {agents.map((a) => (
                       <AgentRow
                         key={a.id}
@@ -435,7 +436,7 @@ export default function AgentsPage() {
       {tab === 'staff' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-500">{staff.length} staff member{staff.length !== 1 ? 's' : ''} in this agency</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{staff.length} staff member{staff.length !== 1 ? 's' : ''} in this agency</p>
             {can('admin') && (
               <Button variant="primary" className="gap-2" onClick={openCreateStaff}>
                 <Plus className="w-4 h-4" /> Add Staff Member
@@ -444,10 +445,10 @@ export default function AgentsPage() {
           </div>
 
           {staff.length === 0 && (
-            <div className="text-center py-16 border border-dashed border-slate-200 rounded-2xl bg-white">
-              <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-[#0F172A]">No staff members</h3>
-              <p className="text-sm text-slate-500 mt-1">Add staff to manage roles and access.</p>
+            <div className="text-center py-16 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800/50">
+              <Users className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-[#0F172A] dark:text-white">No staff members</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Add staff to manage roles and access.</p>
             </div>
           )}
 
@@ -456,46 +457,46 @@ export default function AgentsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-100">
+                    <tr className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
                       <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Name</th>
-                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Email</th>
-                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Phone</th>
-                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Role</th>
-                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Status</th>
-                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide">Created</th>
-                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 text-xs uppercase tracking-wide"></th>
+                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Email</th>
+                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Phone</th>
+                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Role</th>
+                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Status</th>
+                      <th className="text-left px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide">Created</th>
+                      <th className="text-right px-5 py-3.5 font-semibold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {staff.map((s) => (
-                      <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
+                      <tr key={s.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center text-brand text-xs font-bold shrink-0">
                               {s.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
                             </div>
-                            <span className="font-medium text-[#0F172A]">{s.name}</span>
+                            <span className="font-medium text-[#0F172A] dark:text-white">{s.name}</span>
                             {s.id === user?.id && (
                               <span className="text-xs text-slate-400">(you)</span>
                             )}
                           </div>
                         </td>
-                        <td className="px-5 py-4 text-slate-600 text-sm">{s.email}</td>
-                        <td className="px-5 py-4 text-slate-600 text-sm">{s.phone || '—'}</td>
+                        <td className="px-5 py-4 text-slate-600 dark:text-slate-300 text-sm">{s.email}</td>
+                        <td className="px-5 py-4 text-slate-600 dark:text-slate-300 text-sm">{s.phone || '—'}</td>
                         <td className="px-5 py-4">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${roleBadgeColor[s.role] ?? 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${roleBadgeColor[s.role] ?? 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600'}`}>
                             {getRoleLabel(s.role)}
                           </span>
                         </td>
                         <td className="px-5 py-4">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${s.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${s.active ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-600'}`}>
                             {s.active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-5 py-4 text-xs text-slate-500">{formatDate(s.created_at)}</td>
+                        <td className="px-5 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(s.created_at)}</td>
                         <td className="px-5 py-4 text-right">
                           {can('admin') && (
-                            <button onClick={() => openEditStaff(s)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-brand transition-colors">
+                            <button onClick={() => openEditStaff(s)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-brand transition-colors">
                               <Edit2 className="w-4 h-4" />
                             </button>
                           )}
@@ -514,33 +515,33 @@ export default function AgentsPage() {
       {agentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAgentModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-              <h2 className="text-lg font-bold text-[#0F172A]">{editingAgent ? 'Edit Agent' : 'New Commission Agent'}</h2>
-              <button onClick={() => setAgentModal(false)} className="p-2 hover:bg-slate-100 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
+          <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+              <h2 className="text-lg font-bold text-[#0F172A] dark:text-white">{editingAgent ? 'Edit Agent' : 'New Commission Agent'}</h2>
+              <button onClick={() => setAgentModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
-                  <input value={agentForm.name} onChange={(e) => setAgentForm((p) => ({ ...p, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="Agent name" />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name *</label>
+                  <input value={agentForm.name} onChange={(e) => setAgentForm((p) => ({ ...p, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="Agent name" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
-                  <input type="email" value={agentForm.email} onChange={(e) => setAgentForm((p) => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="agent@email.com" />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email *</label>
+                  <input type="email" value={agentForm.email} onChange={(e) => setAgentForm((p) => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="agent@email.com" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-                  <input value={agentForm.phone} onChange={(e) => setAgentForm((p) => ({ ...p, phone: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="+968 9000 0000" />
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+                  <input value={agentForm.phone} onChange={(e) => setAgentForm((p) => ({ ...p, phone: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="+968 9000 0000" />
                 </div>
               </div>
 
-              <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/40 space-y-3">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Commission Settings</h3>
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50/40 dark:bg-slate-800/40 space-y-3">
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Commission Settings</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Type</label>
-                    <select value={agentForm.commission_type} onChange={(e) => setAgentForm((p) => ({ ...p, commission_type: e.target.value as 'percentage' | 'fixed' }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white">
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Type</label>
+                    <select value={agentForm.commission_type} onChange={(e) => setAgentForm((p) => ({ ...p, commission_type: e.target.value as 'percentage' | 'fixed' }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
                       {COMMISSION_TYPES.map((ct) => <option key={ct.id} value={ct.id}>{ct.label}</option>)}
                     </select>
                   </div>
@@ -548,15 +549,15 @@ export default function AgentsPage() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">
                       {agentForm.commission_type === 'fixed' ? 'Amount (OMR)' : 'Rate (%)'}
                     </label>
-                    <input type="number" min={0} step={agentForm.commission_type === 'fixed' ? 0.1 : 0.01} value={agentForm.commission_rate} onChange={(e) => setAgentForm((p) => ({ ...p, commission_rate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="0" />
+                    <input type="number" min={0} step={agentForm.commission_type === 'fixed' ? 0.1 : 0.01} value={agentForm.commission_rate} onChange={(e) => setAgentForm((p) => ({ ...p, commission_rate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="0" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Base</label>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Base</label>
                     <select
                       value={agentForm.commission_base}
                       onChange={(e) => setAgentForm((p) => ({ ...p, commission_base: e.target.value as 'profit' | 'total_sale' | 'service_fee' }))}
                       disabled={agentForm.commission_type === 'fixed'}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white disabled:opacity-50"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:opacity-50"
                     >
                       {COMMISSION_BASES.map((cb) => <option key={cb.id} value={cb.id}>{cb.label}</option>)}
                     </select>
@@ -564,7 +565,7 @@ export default function AgentsPage() {
                 </div>
 
                 {agentForm.commission_type === 'percentage' && agentForm.commission_rate && (
-                  <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700">
+                  <div className="rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 px-3 py-2 text-xs text-blue-700 dark:text-blue-400">
                     <strong>Example:</strong> A booking with{' '}
                     {agentForm.commission_base === 'profit' ? 'profit of 100 OMR' : 'sale price of 500 OMR'}{' '}
                     earns <strong>{((Number(agentForm.commission_rate) / 100) * (agentForm.commission_base === 'profit' ? 100 : 500)).toFixed(3)} OMR</strong> commission.
@@ -572,13 +573,13 @@ export default function AgentsPage() {
                 )}
               </div>
 
-              <label className="flex items-center gap-3 text-sm text-slate-700">
+              <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
                 <input type="checkbox" checked={agentForm.active} onChange={(e) => setAgentForm((p) => ({ ...p, active: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 text-brand focus:ring-brand" />
                 Active agent
               </label>
 
               {agentError && (
-                <div className="flex items-start gap-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                <div className="flex items-start gap-2 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> {agentError}
                 </div>
               )}
@@ -613,36 +614,36 @@ export default function AgentsPage() {
       {staffModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setStaffModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-              <h2 className="text-lg font-bold text-[#0F172A]">{editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}</h2>
-              <button onClick={() => setStaffModal(false)} className="p-2 hover:bg-slate-100 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
+          <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+              <h2 className="text-lg font-bold text-[#0F172A] dark:text-white">{editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}</h2>
+              <button onClick={() => setStaffModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
-                <input value={staffForm.name} onChange={(e) => setStaffForm((p) => ({ ...p, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="Full name" />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name *</label>
+                <input value={staffForm.name} onChange={(e) => setStaffForm((p) => ({ ...p, name: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="Full name" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
-                <input type="email" value={staffForm.email} onChange={(e) => setStaffForm((p) => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="staff@agency.com" />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email *</label>
+                <input type="email" value={staffForm.email} onChange={(e) => setStaffForm((p) => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="staff@agency.com" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-                <input value={staffForm.phone} onChange={(e) => setStaffForm((p) => ({ ...p, phone: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="+968 9000 0000" />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+                <input value={staffForm.phone} onChange={(e) => setStaffForm((p) => ({ ...p, phone: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" placeholder="+968 9000 0000" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Role</label>
                 <select
                   value={staffForm.role}
                   onChange={(e) => setStaffForm((p) => ({ ...p, role: e.target.value }))}
                   disabled={editingStaff?.id === user?.id}
-                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:opacity-50"
+                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:opacity-50"
                 >
                   {EDITABLE_ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
                 </select>
               </div>
-              <label className="flex items-center gap-3 text-sm text-slate-700">
+              <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
                   checked={staffForm.active}
@@ -653,7 +654,7 @@ export default function AgentsPage() {
                 Active
               </label>
               {staffError && (
-                <div className="flex items-start gap-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                <div className="flex items-start gap-2 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> {staffError}
                 </div>
               )}
@@ -692,14 +693,14 @@ function AgentRow({
     : `${agent.commission_rate}% of ${agent.commission_base === 'profit' ? 'profit' : agent.commission_base === 'total_sale' ? 'sale' : 'fee'}`;
 
   return (
-    <tr className="hover:bg-slate-50/50 transition-colors">
+    <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
       <td className="px-5 py-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center text-brand text-xs font-bold shrink-0">
             {agent.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
           </div>
           <div>
-            <p className="font-medium text-[#0F172A] text-sm">{agent.name}</p>
+            <p className="font-medium text-[#0F172A] dark:text-white text-sm">{agent.name}</p>
             <p className="text-xs text-slate-400">{agent.email}</p>
           </div>
         </div>
@@ -707,7 +708,7 @@ function AgentRow({
       <td className="px-5 py-4">
         <span className="text-xs font-medium text-slate-700">{commissionLabel}</span>
       </td>
-      <td className="px-5 py-4 text-right text-sm font-medium text-[#0F172A]">{stats.bookingCount}</td>
+      <td className="px-5 py-4 text-right text-sm font-medium text-[#0F172A] dark:text-white">{stats.bookingCount}</td>
       <td className="px-5 py-4 text-right text-sm font-semibold text-emerald-700">{formatCurrency(stats.earned, 'OMR')}</td>
       <td className="px-5 py-4 text-right text-sm text-slate-600">{formatCurrency(stats.paid, 'OMR')}</td>
       <td className="px-5 py-4 text-right">
@@ -723,17 +724,17 @@ function AgentRow({
       <td className="px-5 py-4 text-right">
         <div className="flex items-center justify-end gap-1">
           {canAdmin && stats.pending > 0 && (
-            <button onClick={onMarkPaid} className="p-1.5 hover:bg-emerald-50 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors" title="Mark commission paid">
+            <button onClick={onMarkPaid} className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors" title="Mark commission paid">
               <DollarSign className="w-4 h-4" />
             </button>
           )}
           {canEdit && (
-            <button onClick={onEdit} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-brand transition-colors" title="Edit">
+            <button onClick={onEdit} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-brand transition-colors" title="Edit">
               <Edit2 className="w-4 h-4" />
             </button>
           )}
           {canDelete && (
-            <button onClick={onDelete} className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title="Delete">
+            <button onClick={onDelete} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-500 transition-colors" title="Delete">
               <Trash2 className="w-4 h-4" />
             </button>
           )}
@@ -765,25 +766,25 @@ function PayCommissionModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+      <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
           <div>
-            <h2 className="text-lg font-bold text-[#0F172A]">Mark Commission Paid</h2>
-            <p className="text-xs text-slate-500 mt-0.5">{agent.name}</p>
+            <h2 className="text-lg font-bold text-[#0F172A] dark:text-white">Mark Commission Paid</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{agent.name}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><X className="w-5 h-5 text-slate-400" /></button>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
-              <p className="text-xs text-slate-500 mb-1">Earned</p>
-              <p className="text-sm font-bold text-[#0F172A]">{formatCurrency(stats.earned, 'OMR')}</p>
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center border border-slate-100 dark:border-slate-700">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Earned</p>
+              <p className="text-sm font-bold text-[#0F172A] dark:text-white">{formatCurrency(stats.earned, 'OMR')}</p>
             </div>
-            <div className="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
-              <p className="text-xs text-slate-500 mb-1">Already Paid</p>
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center border border-slate-100 dark:border-slate-700">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Already Paid</p>
               <p className="text-sm font-bold text-emerald-700">{formatCurrency(stats.paid, 'OMR')}</p>
             </div>
-            <div className="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+            <div className="bg-amber-50 dark:bg-amber-500/10 rounded-xl p-3 text-center border border-amber-100 dark:border-amber-500/20">
               <p className="text-xs text-amber-600 mb-1">Pending</p>
               <p className="text-sm font-bold text-amber-700">{formatCurrency(stats.pending, 'OMR')}</p>
             </div>
@@ -796,21 +797,21 @@ function PayCommissionModal({
           ) : (
             <>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Payment Date *</label>
-                <input type="date" value={payDate} onChange={(e) => onDateChange(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Payment Date *</label>
+                <DatePicker value={payDate} onChange={onDateChange} placeholder="Select date" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes (optional)</label>
                 <textarea value={payNotes} onChange={(e) => onNotesChange(e.target.value)} rows={2} placeholder="e.g. Bank transfer ref #12345" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand resize-none" />
               </div>
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              <div className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-400">
                 This will mark all <strong>{stats.pending > 0 ? bookings.filter((b) => b.agent_id === agent.id && !b.commission_paid && (b.commission_amount ?? 0) > 0).length : 0}</strong> unpaid booking commission(s) as paid with the date above.
               </div>
             </>
           )}
 
           {payError && (
-            <div className="flex items-start gap-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+            <div className="flex items-start gap-2 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> {payError}
             </div>
           )}

@@ -90,9 +90,9 @@ export function Combobox({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        <span className={selected ? 'text-[#0F172A] truncate' : 'text-slate-400'}>
+        <span className={selected ? 'text-[#0F172A] dark:text-white truncate' : 'text-slate-400'}>
           {selected ? selected.label : placeholder}
         </span>
         <span className="flex items-center gap-1 shrink-0 ml-2">
@@ -114,9 +114,9 @@ export function Combobox({
 
       {open && (
         <div
-          className="absolute z-50 mt-1 w-full min-w-[220px] bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
+          className="absolute z-50 mt-1 w-full min-w-[220px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden"
         >
-          <div className="p-2 border-b border-slate-100">
+          <div className="p-2 border-b border-slate-100 dark:border-slate-800">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
               <input
@@ -125,13 +125,13 @@ export function Combobox({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search..."
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-md focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
               />
             </div>
           </div>
           <div ref={listRef} className="max-h-52 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="px-3 py-6 text-center text-sm text-slate-400">No results</p>
+              <p className="px-3 py-6 text-center text-sm text-slate-400 dark:text-slate-500">No results</p>
             ) : (
               filtered.map((option) => (
                 <button
@@ -141,7 +141,7 @@ export function Combobox({
                   className={`w-full text-left px-3 py-2 text-sm transition-colors ${
                     option.value === value
                       ? 'bg-brand/10 text-brand font-medium'
-                      : 'text-[#0F172A] hover:bg-slate-50'
+                      : 'text-[#0F172A] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   {option.label}

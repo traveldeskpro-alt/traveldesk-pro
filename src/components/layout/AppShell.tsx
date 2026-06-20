@@ -278,12 +278,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-8 travel-bg">
           {isSuspendedAgency ? (
             <div className="min-h-full flex items-center justify-center">
-              <div className="max-w-lg rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+              <div className="max-w-lg rounded-2xl border border-red-200 dark:border-red-800/50 bg-white dark:bg-slate-900 p-8 text-center shadow-sm">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 dark:bg-red-900/30 text-red-600">
                   <AlertTriangle className="h-7 w-7" />
                 </div>
-                <h1 className="text-2xl font-bold text-navy">Subscription Suspended</h1>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
+                <h1 className="text-2xl font-bold text-navy dark:text-white">Subscription Suspended</h1>
+                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
                   Your agency subscription is currently suspended. Please contact TravelDesk Pro support to reactivate access.
                 </p>
                 <button
