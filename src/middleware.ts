@@ -4,11 +4,21 @@ import { NextResponse, type NextRequest } from 'next/server';
 // Routes that do not require a session.
 // /demo is the isolated demo workspace — it has its own DemoProvider and
 // never interacts with the real Supabase auth session.
-const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/demo'];
+const PUBLIC_PATHS = [
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-otp',
+  '/demo',
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isPublicPath = pathname === '/' || PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+
+  const isPublicPath =
+    pathname === '/' ||
+    PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -33,7 +43,9 @@ export async function middleware(request: NextRequest) {
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value)
         );
+
         response = NextResponse.next({ request });
+
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options)
         );
@@ -53,39 +65,108 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // ------------------------------------------------------------
+  // MFA / Authenticator App verification
+  // ------------------------------------------------------------
+  //
+  // If the user has a verified TOTP factor, Supabase will report:
+  // nextLevel = aal2
+  //
+  // Until the user completes the OTP verification:
+  // currentLevel remains aal1.
+  //
+  // We only redirect authenticated users who actually need AAL2.
+  let aal: 'aal1' | 'aal2' | null = null;
+  let nextAal: 'aal1' | 'aal2' | null = null;
+
+  if (user) {
+    const { data: aalData } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+    aal = aalData?.currentLevel === 'aal2' ? 'aal2' : 'aal1';
+    nextAal = aalData?.nextLevel === 'aal2' ? 'aal2' : 'aal1';
+  }
+
+  if (
+    user &&
+    nextAal === 'aal2' &&
+    aal !== 'aal2' &&
+    !pathname.startsWith('/verify-otp')
+  ) {
+    return NextResponse.redirect(new URL('/verify-otp', request.url));
+  }
+
   let profile: { role: string; active?: boolean } | null = null;
+
   const getProfile = async () => {
     if (profile) return profile;
+
     const { data } = await supabase
       .from('users')
       .select('role,active')
       .eq('id', user!.id)
       .maybeSingle();
+
     profile = data;
     return profile;
   };
 
-  // Authenticated request to a public auth page (login/signup) → skip to app.
-  // /reset-password is excluded: Supabase posts an auth code there even when
-  // the user already has an active session (e.g. changing password while logged in).
-  if (user && isPublicPath && !pathname.startsWith('/reset-password')) {
+  // Authenticated request to a public auth page (login/signup)
+  // → skip to app.
+  //
+  // /reset-password is excluded because Supabase can post an auth code
+  // there even when the user already has an active session.
+  //
+  // /verify-otp is also excluded because an authenticated AAL1 user
+  // must be allowed to reach the OTP verification screen.
+  if (
+    user &&
+    isPublicPath &&
+    !pathname.startsWith('/reset-password') &&
+    !pathname.startsWith('/verify-otp')
+  ) {
     const nextProfile = await getProfile();
-    const targetPath = nextProfile?.role === 'super_admin' ? '/saas-admin' : '/dashboard';
+
+    const targetPath =
+      nextProfile?.role === 'super_admin'
+        ? '/saas-admin'
+        : '/dashboard';
+
+    return NextResponse.redirect(new URL(targetPath, request.url));
+  }
+
+  // If an already-verified AAL2 user manually opens /verify-otp,
+  // send them to their normal workspace.
+  if (user && pathname.startsWith('/verify-otp') && aal === 'aal2') {
+    const nextProfile = await getProfile();
+
+    const targetPath =
+      nextProfile?.role === 'super_admin'
+        ? '/saas-admin'
+        : '/dashboard';
+
     return NextResponse.redirect(new URL(targetPath, request.url));
   }
 
   if (user && pathname.startsWith('/dashboard')) {
     const nextProfile = await getProfile();
+
     if (nextProfile?.role === 'super_admin' && nextProfile?.active) {
       return NextResponse.redirect(new URL('/saas-admin', request.url));
     }
   }
 
-  const isSaasAdminPath = pathname.startsWith('/admin') || pathname.startsWith('/saas-admin');
+  const isSaasAdminPath =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/saas-admin');
+
   if (user && isSaasAdminPath) {
     const nextProfile = await getProfile();
 
-    if (nextProfile?.role !== 'super_admin' || !nextProfile?.active) {
+    if (
+      nextProfile?.role !== 'super_admin' ||
+      !nextProfile?.active
+    ) {
       const dashboardUrl = new URL('/dashboard', request.url);
       return NextResponse.redirect(dashboardUrl);
     }
