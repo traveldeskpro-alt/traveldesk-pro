@@ -48,7 +48,7 @@ interface SignupForm {
   plan: string;
 }
 
-// Public interface — no demo-specific fields.
+// Public interface Ã¢â‚¬â€ no demo-specific fields.
 // Demo mode lives entirely inside /demo/* routes and DemoContext.
 export interface AuthContextType {
   user: User | null;
@@ -139,6 +139,35 @@ async function fetchProfile(sb: NonNullable<typeof supabase>, userId: string) {
     throw new Error("Your agency profile is incomplete.");
   }
 
+  const { data: agencyStatus, error: statusError } = await sb.rpc(
+    "get_my_agency_status"
+  );
+
+  if (statusError) {
+    throw statusError;
+  }
+
+  if (agencyStatus === "suspended") {
+    return {
+      user,
+      agency: {
+        id: profile.agency_id,
+        name: "",
+        email: profile.email,
+        phone: "",
+        crNumber: "",
+        address: "",
+        logoUrl: "",
+        currency: "OMR",
+        language: "en",
+        status: "suspended",
+        plan: "starter",
+        createdAt: "",
+        updatedAt: ""
+      },
+    };
+  }
+
   const { data: agency, error: agencyError } = await sb
     .from("agencies")
     .select("*")
@@ -162,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // No Supabase configured — nothing to initialise.
+    // No Supabase configured Ã¢â‚¬â€ nothing to initialise.
     // Production deployments must set NEXT_PUBLIC_SUPABASE_URL and
     // NEXT_PUBLIC_SUPABASE_ANON_KEY. Without them, auth will not work and
     // every login attempt will throw.
@@ -197,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!session) {
-          // No session on initial load — user is not authenticated.
+          // No session on initial load Ã¢â‚¬â€ user is not authenticated.
           // We do NOT check localStorage here. Demo mode is entirely isolated
           // to /demo/* routes and DemoContext; it never touches this provider.
           if (mounted) setIsLoading(false);
@@ -214,7 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (mounted) setIsLoading(false);
             return;
           }
-          // Auth user exists but has no profile row — incomplete registration.
+          // Auth user exists but has no profile row Ã¢â‚¬â€ incomplete registration.
           // Sign out cleanly rather than leaving a half-authenticated state.
           await sb.auth.signOut();
           if (mounted) setIsLoading(false);
@@ -236,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // login — throws when Supabase is not configured.
+  // login Ã¢â‚¬â€ throws when Supabase is not configured.
   // Sets isLoading = true here; onAuthStateChange clears it after profile load
   // so AppShell never sees the transient isAuthenticated=false between the two.
   const login = useCallback(async (email: string, password: string) => {
@@ -257,7 +286,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // State update and isLoading=false are handled by onAuthStateChange.
   }, []);
 
-  // register — throws when Supabase is not configured.
+  // register Ã¢â‚¬â€ throws when Supabase is not configured.
   const register = useCallback(async (form: SignupForm) => {
     if (!supabase) {
       throw new Error(
